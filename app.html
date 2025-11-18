@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Panel del profesor — FormatExp</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Panel del profesor de FormatExp. Crea y organiza tus materiales generados con IA." />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body data-page="app">
+  <a class="skip-link" href="#main">Saltar al contenido principal</a>
+
+  <header class="app-header">
+    <div class="container app-header-inner">
+      <a href="./index.html" class="brand" aria-label="FormatExp - Inicio">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="brand-text">
+          <span class="brand-name">FormatExp</span>
+          <span class="brand-tagline">Panel del profesor</span>
+        </span>
+      </a>
+
+      <div class="app-header-right">
+        <div class="app-user">
+          <span class="app-user-email" id="app-user-email">profesor@ejemplo.com</span>
+          <span class="app-user-plan" id="app-user-plan">Plan Personal</span>
+        </div>
+        <button type="button" class="btn btn-outline btn-sm" id="logout-btn">
+          Cerrar sesión
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main" class="app-main">
+    <div class="container app-layout">
+      <aside class="app-sidebar" aria-label="Navegación del panel">
+        <nav>
+          <ul class="app-nav">
+            <li><button class="app-nav-link is-active" data-section="create">Nuevo material</button></li>
+            <li><button class="app-nav-link" data-section="history">Historial</button></li>
+            <li><button class="app-nav-link" data-section="credits">Créditos IA</button></li>
+            <li><button class="app-nav-link" data-section="account">Cuenta</button></li>
+          </ul>
+        </nav>
+
+        <section class="app-credits-summary" aria-label="Resumen de créditos">
+          <h2>Créditos IA</h2>
+          <p class="credits-main">
+            <span id="credits-remaining">100</span> / <span id="credits-total">100</span>
+          </p>
+          <p class="credits-label">Créditos disponibles este mes</p>
+          <p class="credits-help">
+            Los tests, resúmenes, guías y presentaciones consumen créditos
+            según su complejidad.
+          </p>
+        </section>
+      </aside>
+
+      <section class="app-content">
+        <!-- SECCIÓN NUEVO MATERIAL -->
+        <section id="section-create" class="app-section is-visible" aria-label="Crear nuevo material">
+          <h1>Crear nuevo material</h1>
+          <p class="section-intro">
+            Sube un documento o pega tu contenido, elige el tipo de material y deja que la IA prepare la base por ti.
+          </p>
+
+          <form id="material-form" class="material-form" novalidate>
+            <div class="field-group">
+              <label for="material-title">Título del material</label>
+              <input
+                id="material-title"
+                name="material-title"
+                type="text"
+                required
+                placeholder="Examen unidad 3 — Revolución Industrial"
+              />
+            </div>
+
+            <div class="field-group">
+              <label for="material-type">Qué quieres generar</label>
+              <select id="material-type" name="material-type" required>
+                <option value="test">Test / Examen tipo test</option>
+                <option value="resumen">Resumen</option>
+                <option value="guia">Guía de estudio</option>
+                <option value="presentacion">Presentación para clase</option>
+              </select>
+            </div>
+
+            <div class="field-group">
+              <label for="material-source">Contenido (texto o resumen del documento)</label>
+              <textarea
+                id="material-source"
+                name="material-source"
+                rows="5"
+                placeholder="Pega aquí el texto principal, temario o resumen del documento..."
+              ></textarea>
+              <p class="field-help">
+                En el MVP podrás subir PDFs y documentos completos.  
+                De momento usamos texto pegado para simular el flujo.
+              </p>
+            </div>
+
+            <div class="field-group">
+              <label for="material-difficulty">Nivel de dificultad</label>
+              <select id="material-difficulty" name="material-difficulty">
+                <option value="facil">Fácil</option>
+                <option value="medio" selected>Medio</option>
+                <option value="dificil">Difícil</option>
+              </select>
+            </div>
+
+            <div class="field-group">
+              <label for="material-questions">Número aproximado de preguntas (para tests)</label>
+              <input
+                id="material-questions"
+                name="material-questions"
+                type="number"
+                min="1"
+                max="100"
+                placeholder="Ej. 20"
+              />
+              <p class="field-help">
+                Para resúmenes, guías o presentaciones podemos ignorar este valor.
+              </p>
+            </div>
+
+            <div class="field-group">
+              <p class="field-help">
+                Estimación de créditos para esta generación: 
+                <strong><span id="credits-estimate">5</span> créditos</strong>.
+              </p>
+            </div>
+
+            <div class="field-group">
+              <button type="submit" class="btn btn-primary btn-lg">
+                Generar material (simulado)
+              </button>
+              <p class="field-error" id="material-error" aria-live="polite"></p>
+              <p class="field-success" id="material-success" aria-live="polite"></p>
+            </div>
+          </form>
+        </section>
+
+        <!-- SECCIÓN HISTORIAL -->
+        <section id="section-history" class="app-section" aria-label="Historial de materiales generados">
+          <h1>Historial de materiales</h1>
+          <p class="section-intro">
+            Aquí verás los materiales que has generado con FormatExp en este navegador.
+          </p>
+
+          <div id="history-empty" class="history-empty">
+            <p>Aún no has generado ningún material.</p>
+            <p><a href="#" data-go="create">Crea tu primer test, resumen o guía de estudio.</a></p>
+          </div>
+
+          <div id="history-list" class="history-list" hidden>
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Título</th>
+                  <th>Tipo</th>
+                  <th>Fecha</th>
+                  <th>Créditos</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody id="history-body">
+                <!-- Relleno por JS -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- SECCIÓN CRÉDITOS -->
+        <section id="section-credits" class="app-section" aria-label="Gestión de créditos IA">
+          <h1>Gestión de créditos IA</h1>
+          <p class="section-intro">
+            Esta vista te ayuda a entender cuántos créditos consume cada tipo de generación y cuánto margen tienes.
+          </p>
+
+          <div class="card">
+            <h2>Consumo típico por tipo de material</h2>
+            <ul class="credits-usage-list">
+              <li><strong>Test / Examen:</strong> ~5 créditos por generación estándar.</li>
+              <li><strong>Resumen:</strong> ~3 créditos.</li>
+              <li><strong>Guía de estudio:</strong> ~4 créditos.</li>
+              <li><strong>Presentación:</strong> ~8 créditos.</li>
+            </ul>
+            <p class="field-help">
+              En producción, este consumo se ajustará según longitud del documento, idioma y formato de salida.
+            </p>
+          </div>
+        </section>
+
+        <!-- SECCIÓN CUENTA -->
+        <section id="section-account" class="app-section" aria-label="Configuración de cuenta">
+          <h1>Tu cuenta</h1>
+          <p class="section-intro">
+            Información básica de tu perfil tal y como la tenemos en este navegador.  
+            En el MVP real se gestionará desde el backend.
+          </p>
+
+          <div class="card account-card">
+            <dl class="account-dl">
+              <div>
+                <dt>Nombre</dt>
+                <dd id="account-name">—</dd>
+              </div>
+              <div>
+                <dt>Correo</dt>
+                <dd id="account-email">—</dd>
+              </div>
+              <div>
+                <dt>Perfil docente</dt>
+                <dd id="account-role">—</dd>
+              </div>
+              <div>
+                <dt>Centro / Academia</dt>
+                <dd id="account-center">—</dd>
+              </div>
+              <div>
+                <dt>Plan</dt>
+                <dd id="account-plan">—</dd>
+              </div>
+            </dl>
+            <p class="field-help">
+              Para actualizar estos datos, vuelve a registrarte en la landing con la información correcta
+              (mientras no tengamos backend real).
+            </p>
+          </div>
+        </section>
+      </section>
+    </div>
+  </main>
+
+  <script src="./script.js"></script>
+</body>
+</html>

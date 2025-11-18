@@ -2,189 +2,605 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
+  <title>FormatExp — Crea material educativo 10× más rápido con IA</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Iriem Da Luz Galindo — Portafolio</title>
-  <meta name="description" content="Desarrollador multiplataforma y estudiante de Máster en IA Generativa. Frontend, UX/UI, automatización e IA." />
-  <meta name="theme-color" content="#0b0b0c" />
-  <link rel="icon" href="../src/favicon.ico" />
-  <link rel="stylesheet" href="../css/index.css" />
+  <meta name="description" content="FormatExp es un toolkit de IA para profesores y academias que genera tests, resúmenes, guías de estudio y presentaciones en segundos. Ahorra hasta 10 horas por semana." />
+
+  <link rel="canonical" href="https://www.formatexp.com/" />
+
+  <!-- Tipografías -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet" />
+
+  <!-- Open Graph / Social -->
+  <meta property="og:title" content="FormatExp — IA para crear material educativo 10× más rápido" />
+  <meta property="og:description" content="Sube un documento y genera tests, resúmenes, guías de estudio y presentaciones listas para clase en segundos." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.formatexp.com/" />
+  <meta property="og:image" content="https://www.formatexp.com/assets/og-image.png" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="FormatExp — IA para profesores y academias" />
+  <meta name="twitter:description" content="Ahorra entre 5 y 10 horas semanales creando material educativo con IA." />
+  <meta name="twitter:image" content="https://www.formatexp.com/assets/og-image.png" />
+
+  <link rel="stylesheet" href="./styles.css" />
 </head>
-<body>
-  <!-- Header -->
+<body data-page="landing">
+  <a class="skip-link" href="#main">Saltar al contenido principal</a>
+
   <header class="site-header">
     <div class="container header-inner">
-      <a href="#hero" class="brand">Iriem</a>
-      <nav class="nav">
-        <a href="#projects" data-i18n="nav.projects"></a>
-        <a href="#blog" data-i18n="nav.blog"></a>
-        <a href="#contact" data-i18n="nav.contact"></a>
-        <a class="btn" href="https://github.com/IriemDaLuz" target="_blank" rel="noopener">GitHub</a>
-        <a class="btn" href="https://www.linkedin.com/in/iriem-da-luz-116564333/" target="_blank" rel="noopener">LinkedIn</a>
-        <button id="langToggle" class="btn" aria-label="Cambiar idioma">EN</button>
+      <a href="./index.html#hero" class="brand" aria-label="FormatExp - Inicio">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="brand-text">
+          <span class="brand-name">FormatExp</span>
+          <span class="brand-tagline">IA para profesores</span>
+        </span>
+      </a>
+
+      <button class="nav-toggle" aria-expanded="false" aria-controls="primary-nav">
+        <span class="nav-toggle-bar"></span>
+        <span class="nav-toggle-bar"></span>
+        <span class="nav-toggle-bar"></span>
+        <span class="sr-only">Abrir menú de navegación</span>
+      </button>
+
+      <nav class="site-nav" id="primary-nav" aria-label="Navegación principal">
+        <ul>
+          <li><a href="#demo">Demo</a></li>
+          <li><a href="#features">Funciones</a></li>
+          <li><a href="#time-saved">Ahorro de tiempo</a></li>
+          <li><a href="#pricing">Precios</a></li>
+          <li><a href="#faq">FAQ</a></li>
+        </ul>
+        <a href="./login.html" class="btn btn-ghost">Entrar</a>
+        <a href="#hero" class="btn btn-primary">Empieza gratis</a>
       </nav>
     </div>
   </header>
 
-  <!-- Hero -->
-  <section id="hero" class="section hero">
-    <div class="container hero-inner">
-      <div class="hero-text">
-        <h1 class="h1">Iriem Da Luz Galindo</h1>
-        <p id="subtitle"></p>
-        <p id="mission"></p>
-        <div class="actions">
-          <a class="btn" href="#projects" data-i18n="cta.projects"></a>
-          <a class="btn" href="#contact" data-i18n="cta.contact"></a>
-          <a class="btn" href="../src/cv.pdf" download>CV</a>
-          <a class="btn" id="openLetter">Carta</a>
+  <main id="main">
+    <!-- HERO -->
+    <section id="hero" class="section hero">
+      <div class="container hero-grid">
+        <div class="hero-main">
+          <p class="eyebrow">SaaS para profesores y academias</p>
+          <h1>Crea material educativo 10× más rápido con IA</h1>
+          <p class="hero-subtitle">
+            FormatExp te ayuda a generar tests, resúmenes, guías de estudio y presentaciones listas para clase a partir de tus documentos.
+            Ahorra entre <strong>5 y 10 horas por semana</strong>.
+          </p>
+
+          <!-- FORMULARIO DEFINITIVO -->
+          <form id="waitlist-form" class="waitlist-form" novalidate>
+            <!-- Honeypot anti-spam -->
+            <div class="hp-field" aria-hidden="true">
+              <label for="website">Deja este campo vacío</label>
+              <input id="website" name="website" type="text" tabindex="-1" autocomplete="off" />
+            </div>
+
+            <div class="field-group">
+              <label for="name">Nombre y apellidos</label>
+              <input
+                id="name"
+                name="name"
+                type="text"
+                required
+                placeholder="Ana García López"
+                autocomplete="name"
+              />
+            </div>
+
+            <div class="field-group">
+              <label for="email">Correo electrónico profesional</label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autocomplete="email"
+                required
+                placeholder="tuemail@centroeducativo.com"
+              />
+            </div>
+
+            <div class="field-group">
+              <label for="role">Tu perfil</label>
+              <select id="role" name="role" required>
+                <option value="">Selecciona una opción</option>
+                <option value="maestro">Maestro / Maestra</option>
+                <option value="secundaria">Profesor/a de secundaria</option>
+                <option value="universidad">Profesor/a universitario/a</option>
+                <option value="formador">Formador/a independiente</option>
+                <option value="academia">Academia / Centro educativo</option>
+                <option value="otros">Otro perfil docente</option>
+              </select>
+            </div>
+
+            <div class="field-group">
+              <label for="center">Centro / Academia (opcional)</label>
+              <input
+                id="center"
+                name="center"
+                type="text"
+                placeholder="IES, universidad, academia u organización"
+                autocomplete="organization"
+              />
+            </div>
+
+            <fieldset class="field-group fieldset-group">
+              <legend>Plan que más te encaja ahora mismo</legend>
+              <div class="radio-group">
+                <label class="radio-option">
+                  <input type="radio" name="plan" value="personal" checked />
+                  <span>
+                    <strong>Personal</strong> — Profesor individual
+                  </span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="plan" value="pro" />
+                  <span>
+                    <strong>Pro</strong> — Volumen alto de material
+                  </span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="plan" value="academia" />
+                  <span>
+                    <strong>Academia</strong> — Varios profesores
+                  </span>
+                </label>
+              </div>
+            </fieldset>
+
+            <div class="field-group field-consent">
+              <label class="checkbox-option">
+                <input type="checkbox" id="consent" name="consent" required />
+                <span>
+                  Acepto recibir información sobre FormatExp y entiendo que podré darme de baja en cualquier momento.
+                </span>
+              </label>
+              <p class="field-help">
+                Usaremos tu correo solo para informarte sobre el lanzamiento y novedades importantes del producto.
+              </p>
+            </div>
+
+            <div class="field-group">
+              <button type="submit" class="btn btn-primary btn-lg">
+                Unirme a la lista de espera
+              </button>
+              <p class="field-help">
+                Sin tarjeta. Acceso anticipado al MVP y a nuevas funciones.
+              </p>
+              <p class="field-error" id="form-error" aria-live="polite"></p>
+              <p class="field-success" id="form-success" aria-live="polite"></p>
+            </div>
+          </form>
+
+          <ul class="hero-bullets" aria-label="Beneficios clave de FormatExp">
+            <li>✅ Especializado 100% en profesores, no en estudiantes.</li>
+            <li>✅ Exportaciones profesionales en PDF, Word y próximamente SCORM.</li>
+            <li>✅ Control de costes con créditos de IA escalables.</li>
+          </ul>
         </div>
-      </div>
 
-      <!-- Hero Media: video -->
-      <aside class="hero-media card" aria-label="Video de presentación">
-        <div class="video-wrap">
-          <video id="introVideo"
-                 class="video-el"
-                 controls
-                 preload="metadata"
-                 playsinline
-                 poster="../src/intro-poster.jpg"
-                 aria-label="Video de presentación de IRiem DA Luz Galindo">
-            <source src="../src/intro.mp4" type="video/mp4" />
-            Tu navegador no soporta video HTML5.
-          </video>
-
-          <!-- Placeholder hasta que subas intro.mp4 -->
-          <div id="videoPlaceholder" class="video-placeholder">
-            <span>Próximamente: Video de presentación</span>
+        <aside class="hero-side" aria-label="Vista previa del flujo de trabajo en FormatExp">
+          <div class="card hero-preview">
+            <p class="card-label">Flujo de trabajo</p>
+            <ol class="preview-steps">
+              <li>
+                <span class="step-number">1</span>
+                <div>
+                  <p class="step-title">Sube tu PDF o documento</p>
+                  <p class="step-text">Temario, apuntes o exámenes anteriores.</p>
+                </div>
+              </li>
+              <li>
+                <span class="step-number">2</span>
+                <div>
+                  <p class="step-title">Elige qué necesitas</p>
+                  <p class="step-text">Test, resumen, guía, presentación…</p>
+                </div>
+              </li>
+              <li>
+                <span class="step-number">3</span>
+                <div>
+                  <p class="step-title">Descarga y usa en clase</p>
+                  <p class="step-text">Exporta en PDF/Word, listo para tus alumnos.</p>
+                </div>
+              </li>
+            </ol>
+            <p class="preview-footnote">
+              Próximamente: corrección automática y bancos masivos de preguntas.
+            </p>
           </div>
-        </div>
-
-        <div class="video-actions">
-          <a id="downloadVideoBtn" class="btn" href="../src/intro.mp4" download hidden>Descargar video</a>
-        </div>
-      </aside>
-    </div>
-  </section>
-
-  <!-- About -->
-  <section id="about" class="section">
-    <div class="container card">
-      <h2 data-i18n="about.title"></h2>
-      <p data-i18n="about.text"></p>
-    </div>
-  </section>
-
-  <!-- Skills -->
-  <section id="skills" class="section">
-    <div class="container card">
-      <h2>Skills</h2>
-      <div id="skillsGrid" class="skills-grid"></div>
-    </div>
-  </section>
-
-  <!-- Projects -->
-  <section id="projects" class="section">
-    <div class="container">
-      <h2 class="section-title" data-i18n="projects.title"></h2>
-      <div id="projectsGrid" class="projects-grid"></div>
-
-      <!-- Fallback si JS no carga: los 3 proyectos -->
-      <noscript>
-        <div class="projects-grid">
-          <article class="card">
-            <h3>Tienda de ropa</h3>
-            <p>E-commerce desde cero con catálogo, carrito y checkout simulado.</p>
-            <div class="stack">
-              <span class="tag">React</span><span class="tag">Node</span><span class="tag">Tailwind</span><span class="tag">Stripe (mock)</span>
-            </div>
-            <a class="btn" target="_blank" rel="noopener" href="https://github.com/IriemDaLuz">GitHub</a>
-          </article>
-          <article class="card">
-            <h3>Videojuego de terror (Unity)</h3>
-            <p>Exploración y puzles con ambientación inmersiva y efectos FX.</p>
-            <div class="stack">
-              <span class="tag">Unity</span><span class="tag">C#</span>
-            </div>
-          </article>
-          <article class="card">
-            <h3>FormatEXP (Startup)</h3>
-            <p>Plataforma para cursos, apuntes, presentaciones y mini-exámenes asistidos por IA.</p>
-            <div class="stack">
-              <span class="tag">Next.js</span><span class="tag">Python</span><span class="tag">IA generativa</span><span class="tag">Notion</span><span class="tag">n8n</span>
-            </div>
-          </article>
-        </div>
-      </noscript>
-    </div>
-  </section>
-
-  <!-- Blog -->
-  <section id="blog" class="section">
-    <div class="container card">
-      <h2 data-i18n="blog.title"></h2>
-      <ul id="blogList" class="blog-list"></ul>
-    </div>
-  </section>
-
-  <!-- Carta de Recomendación -->
-  <section id="recommendation" class="section">
-    <div class="container card">
-      <h2>Carta de Recomendación</h2>
-      <p class="text-muted">
-        Documento emitido por Virtual ON destacando compromiso, responsabilidad, trabajo en remoto y resultados.
-      </p>
-      <div class="inline-actions">
-        <button class="btn" id="openLetterModal">Ver carta</button>
-        <a class="btn" href="../src/[DA LUZ GALINDO IRIEM] CARTA RECOMENDACIÓN_signed.pdf" download>Descargar PDF</a>
+        </aside>
       </div>
-      <blockquote class="card" style="margin-top:12px">
-        “Demostró un alto nivel de compromiso, responsabilidad y profesionalismo en cada tarea.” — Virtual ON
-      </blockquote>
-    </div>
-  </section>
+    </section>
 
-  <!-- Modal PDF -->
-  <div id="pdfModal" class="modal" aria-hidden="true" role="dialog" aria-label="Carta de recomendación">
-    <div class="modal-backdrop" data-close></div>
-    <div class="modal-dialog">
-      <button class="modal-close" data-close aria-label="Cerrar">×</button>
-      <object data="../src/[DA LUZ GALINDO IRIEM] CARTA RECOMENDACIÓN_signed.pdf" type="application/pdf" class="pdf-viewer">
-        <p>Tu navegador no puede mostrar PDFs. <a href="../src/[DA LUZ GALINDO IRIEM] CARTA RECOMENDACIÓN_signed.pdf" target="_blank" rel="noopener">Abrir en pestaña nueva</a>.</p>
-      </object>
-    </div>
-  </div>
+    <!-- DEMO -->
+    <section id="demo" class="section demo">
+      <div class="container">
+        <header class="section-header">
+          <h2>Ve cómo un test cobra vida en segundos</h2>
+          <p>
+            Imagina subir tu temario y obtener al instante un test de opción múltiple
+            con decenas de preguntas listas para imprimir o importar a tu LMS.
+          </p>
+        </header>
 
-  <!-- Contact -->
-  <section id="contact" class="section">
-    <div class="container contact-grid">
-      <div class="card">
-        <h2 data-i18n="contact.title"></h2>
-        <form id="contactForm" novalidate>
-          <label><span>Nombre</span><input name="name" required minlength="2" maxlength="80"></label>
-          <label><span>Email</span><input type="email" name="email" required></label>
-          <label><span>Mensaje</span><textarea name="message" required minlength="10" maxlength="2000"></textarea></label>
-          <button class="btn" type="submit" data-i18n="contact.send"></button>
-          <p id="formStatus" class="status" role="status"></p>
-        </form>
-        <div class="inline-actions">
-          <a class="btn" href="mailto:contacto@tu-dominio.com">Email</a>
-          <a class="btn" href="../src/cv.pdf" download>CV</a>
+        <div class="demo-grid">
+          <div class="video-placeholder" role="img" aria-label="Vista previa de cómo FormatExp genera un test automáticamente">
+            <span class="video-badge">Demo MVP pronto disponible</span>
+            <p class="video-title">Genera un examen de 30 preguntas en menos de 1 minuto</p>
+            <p class="video-text">
+              Aquí verás un vídeo corto mostrando el flujo real: subir documento → elegir tipo de test → exportar.
+            </p>
+          </div>
+
+          <ul class="demo-points">
+            <li><strong>Compatible con PDFs, Word y texto pegado.</strong></li>
+            <li>Configura dificultad, número de preguntas y tipo de respuesta.</li>
+            <li>Exporta para imprimir o integrar en tu plataforma actual.</li>
+            <li>Sistema de créditos IA para controlar costes de forma transparente.</li>
+          </ul>
         </div>
       </div>
-      <div class="card">
-        <h3>Calendly</h3>
-        <div class="calendly-wrap">
-          <iframe src="https://calendly.com/tu-usuario/30min" title="Calendly" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+    </section>
+
+    <!-- FEATURES -->
+    <section id="features" class="section features">
+      <div class="container">
+        <header class="section-header">
+          <h2>Un toolkit de IA pensado solo para docentes</h2>
+          <p>
+            FormatExp se centra en lo que más tiempo te consume: crear y actualizar material educativo para tus clases.
+          </p>
+        </header>
+
+        <div class="feature-grid">
+          <article class="card feature-card">
+            <h3>Generador de tests y exámenes</h3>
+            <p>
+              Crea cuestionarios tipo test, opción múltiple y verdadero/falso en segundos,
+              a partir de tus propios materiales.
+            </p>
+            <ul>
+              <li>Control de dificultad.</li>
+              <li>Banco de preguntas reutilizable.</li>
+              <li>Compatible con plataformas de evaluación.</li>
+            </ul>
+          </article>
+
+          <article class="card feature-card">
+            <h3>Resúmenes y guías de estudio</h3>
+            <p>
+              Convierte capítulos largos en resúmenes claros y estructurados con objetivos,
+              ideas clave y preguntas de repaso.
+            </p>
+            <ul>
+              <li>Resúmenes por sección o por tema.</li>
+              <li>Guías listas para compartir con tus alumnos.</li>
+            </ul>
+          </article>
+
+          <article class="card feature-card">
+            <h3>Presentaciones listas para clase</h3>
+            <p>
+              Genera un esquema de diapositivas con títulos, bullets y notas de orador
+              listas para llevar a tu herramienta favorita.
+            </p>
+            <ul>
+              <li>Exportación a PDF / PowerPoint (MVP Pro).</li>
+              <li>Plantillas adaptadas a educación.</li>
+            </ul>
+          </article>
+
+          <article class="card feature-card">
+            <h3>Bancos de preguntas &amp; corrección automática</h3>
+            <p>
+              Crea bancos masivos de preguntas y corrige actividades de forma automática
+              (roadmap Pro e Instituciones).
+            </p>
+            <ul>
+              <li>Exportación SCORM y LMS (Moodle, Classroom).</li>
+              <li>Analíticas de uso y rendimiento (Plan Academia).</li>
+            </ul>
+          </article>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
+
+    <!-- TIME SAVED -->
+    <section id="time-saved" class="section time-saved">
+      <div class="container time-grid">
+        <div>
+          <header class="section-header">
+            <h2>Ahorra entre 5 y 10 horas por semana</h2>
+            <p>
+              Cada profesor invierte horas preparando material. FormatExp automatiza las tareas
+              más repetitivas para que puedas centrarte en enseñar.
+            </p>
+          </header>
+
+          <ul class="time-list">
+            <li><strong>Generación de tests:</strong> ahorra 1–2 horas por examen.</li>
+            <li><strong>Resúmenes y guías:</strong> ahorra ~1 hora por tema.</li>
+            <li><strong>Presentaciones IA:</strong> ahorra 2–3 horas por unidad didáctica.</li>
+            <li><strong>Bancos de preguntas:</strong> ahorra hasta 6 horas de trabajo manual.</li>
+          </ul>
+
+          <p class="time-highlight">
+            Con solo 2–3 asignaturas, el ahorro semanal de tiempo justifica de sobra el coste del Plan Personal.
+          </p>
+        </div>
+
+        <aside class="card time-card" aria-label="Ejemplo de cálculo del tiempo ahorrado">
+          <h3>Cálculo rápido</h3>
+          <dl class="time-dl">
+            <div>
+              <dt>Tests mensuales</dt>
+              <dd>4 × (1,5 h) ≈ 6 h</dd>
+            </div>
+            <div>
+              <dt>Resúmenes y guías</dt>
+              <dd>4 × (1 h) ≈ 4 h</dd>
+            </div>
+            <div>
+              <dt>Presentaciones</dt>
+              <dd>2 × (2 h) ≈ 4 h</dd>
+            </div>
+          </dl>
+          <p class="time-dl-foot">
+            Total estimado: <strong>14 horas/mes</strong> ahorradas.  
+            Tu tiempo vale más que una suscripción.
+          </p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- PRICING -->
+    <section id="pricing" class="section pricing">
+      <div class="container">
+        <header class="section-header">
+          <h2>Planes pensados para profesores y academias</h2>
+          <p>
+            Empieza con el Plan Personal y escala cuando necesites más créditos de IA o cuentas para tu institución.
+          </p>
+        </header>
+
+        <div class="pricing-grid" role="list">
+          <article class="card pricing-card" role="listitem">
+            <p class="pricing-badge">Plan Personal</p>
+            <h3>Para un profesor</h3>
+            <p class="pricing-price">
+              12 € <span class="pricing-period">/ mes</span>
+            </p>
+            <p class="pricing-alt">o 99 €/año</p>
+            <ul class="pricing-features">
+              <li>Tests ilimitados (hasta 200 preguntas/mes).</li>
+              <li>Resúmenes y guías de estudio.</li>
+              <li>Exportación PDF/Word.</li>
+              <li>Historial de documentos.</li>
+              <li>100 créditos de IA/mes.</li>
+            </ul>
+            <button class="btn btn-outline" type="button" data-plan="personal">
+              Unirme a la beta Personal
+            </button>
+          </article>
+
+          <article class="card pricing-card pricing-card-highlight" role="listitem">
+            <p class="pricing-badge">Plan Pro</p>
+            <h3>Formadores intensivos</h3>
+            <p class="pricing-price">
+              29 € <span class="pricing-period">/ mes</span>
+            </p>
+            <p class="pricing-alt">o 249 €/año</p>
+            <ul class="pricing-features">
+              <li>Todo lo del Plan Personal.</li>
+              <li>500 créditos de IA/mes.</li>
+              <li>Generador de presentaciones.</li>
+              <li>Bancos de preguntas exportables.</li>
+              <li>Carpetas y organización avanzada.</li>
+              <li>Marca blanca en exportaciones.</li>
+            </ul>
+            <button class="btn btn-primary" type="button" data-plan="pro">
+              Unirme a la beta Pro
+            </button>
+          </article>
+
+          <article class="card pricing-card" role="listitem">
+            <p class="pricing-badge">Plan Academia</p>
+            <h3>Centros e instituciones</h3>
+            <p class="pricing-price">
+              Desde 99 € <span class="pricing-period">/ mes</span>
+            </p>
+            <p class="pricing-alt">Precio según número de profesores.</p>
+            <ul class="pricing-features">
+              <li>Todo lo del Plan Pro.</li>
+              <li>10 cuentas de profesor incluidas.</li>
+              <li>Administración centralizada.</li>
+              <li>Analítica de uso.</li>
+              <li>SCORM opcional e integración LMS.</li>
+              <li>Soporte prioritario.</li>
+            </ul>
+            <button class="btn btn-outline" type="button" data-plan="academia">
+              Solicitar demo para Academia
+            </button>
+          </article>
+        </div>
+
+        <div class="credits">
+          <h3>Créditos de IA adicionales</h3>
+          <p>
+            Flexibilidad total: compra créditos extra cuando los necesites.  
+            Ideal para épocas de exámenes o preparación de oposiciones.
+          </p>
+          <ul class="credits-list">
+            <li><strong>100 créditos</strong> → 10 €</li>
+            <li><strong>500 créditos</strong> → 39 €</li>
+            <li><strong>1.000 créditos</strong> → 69 €</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- TESTIMONIALS -->
+    <section id="testimonials" class="section testimonials">
+      <div class="container">
+        <header class="section-header">
+          <h2>Lo que ya están diciendo los primeros profesores</h2>
+          <p>Testimonios ficticios basados en el tipo de impacto que buscamos validar.</p>
+        </header>
+
+        <div class="testimonial-grid">
+          <article class="card testimonial-card">
+            <p class="testimonial-text">
+              “Antes tardaba tardes enteras en preparar exámenes y guías.  
+              Con FormatExp genero la base en minutos y solo ajusto el contenido.”
+            </p>
+            <p class="testimonial-author">Ana, Profesora de secundaria</p>
+          </article>
+
+          <article class="card testimonial-card">
+            <p class="testimonial-text">
+              “Para mi academia de oposiciones es clave tener bancos de preguntas.  
+              El modelo de créditos nos permite controlar costes sin renunciar a la IA.”
+            </p>
+            <p class="testimonial-author">Javier, Director de academia</p>
+          </article>
+
+          <article class="card testimonial-card">
+            <p class="testimonial-text">
+              “Lo que más valoro es poder exportar materiales ya listos para clase y adaptados a mis propios temarios.”
+            </p>
+            <p class="testimonial-author">Lucía, Profesora universitaria</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="section faq">
+      <div class="container">
+        <header class="section-header">
+          <h2>Preguntas frecuentes</h2>
+          <p>Transparencia total sobre lo que hace (y lo que no hace todavía) el MVP.</p>
+        </header>
+
+        <div class="faq-list" role="list">
+          <article class="faq-item card" role="listitem">
+            <button class="faq-question" type="button" aria-expanded="false">
+              <span>¿Para quién está pensado FormatExp?</span>
+              <span aria-hidden="true">+</span>
+            </button>
+            <div class="faq-answer" hidden>
+              <p>
+                Para profesores individuales, formadores independientes y academias que crean material de forma recurrente
+                y quieren ahorrar horas de trabajo manual.
+              </p>
+            </div>
+          </article>
+
+          <article class="faq-item card" role="listitem">
+            <button class="faq-question" type="button" aria-expanded="false">
+              <span>¿Los alumnos pueden usar la plataforma?</span>
+              <span aria-hidden="true">+</span>
+            </button>
+            <div class="faq-answer" hidden>
+              <p>
+                No. FormatExp está diseñado exclusivamente para docentes y centros educativos. 
+                El foco está en ayudarte a preparar y corregir material, no en ofrecer un portal para alumnos.
+              </p>
+            </div>
+          </article>
+
+          <article class="faq-item card" role="listitem">
+            <button class="faq-question" type="button" aria-expanded="false">
+              <span>¿Cómo funcionan los créditos de IA?</span>
+              <span aria-hidden="true">+</span>
+            </button>
+            <div class="faq-answer" hidden>
+              <p>
+                Cada generación consume una pequeña cantidad de créditos según el tipo de material (tests, resúmenes,
+                presentaciones, bancos grandes, etc.). Así controlamos los costes y mantenemos precios justos.
+              </p>
+            </div>
+          </article>
+
+          <article class="faq-item card" role="listitem">
+            <button class="faq-question" type="button" aria-expanded="false">
+              <span>¿Necesito tarjeta para probar el MVP?</span>
+              <span aria-hidden="true">+</span>
+            </button>
+            <div class="faq-answer" hidden>
+              <p>
+                Durante la fase de beta inicial, el acceso será gratuito para un grupo reducido de profesores a cambio
+                de feedback. Más adelante se activará el paywall según el plan que elijas.
+              </p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA FINAL -->
+    <section id="cta" class="section cta">
+      <div class="container cta-inner">
+        <div>
+          <h2>Empieza a recuperar horas de tu semana</h2>
+          <p>
+            Únete a la lista de espera y sé de los primeros en probar FormatExp.
+            Te avisaremos cuando el MVP esté listo para tu tipo de centro.
+          </p>
+        </div>
+        <a href="#hero" class="btn btn-primary btn-lg">
+          Unirme a la lista de espera
+        </a>
+      </div>
+    </section>
+  </main>
 
   <footer class="site-footer">
-    <div class="container">© <span id="year"></span> IRiem DA Luz Galindo — All rights reserved</div>
+    <div class="container footer-grid">
+      <div>
+        <p class="footer-brand">FormatExp</p>
+        <p class="footer-text">
+          “Expande tu tiempo. Expande tu enseñanza.”  
+          IA práctica para profesores y academias.
+        </p>
+      </div>
+      <nav aria-label="Enlaces legales">
+        <ul class="footer-links">
+          <li><a href="./index.html#hero">Inicio</a></li>
+          <li><a href="./index.html#pricing">Planes y precios</a></li>
+          <li><a href="./index.html#faq">FAQ</a></li>
+          <li><a href="#">Política de privacidad (próximamente)</a></li>
+          <li><a href="#">Términos de uso (próximamente)</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="container footer-bottom">
+      <p>© <span id="year"></span> FormatExp. Todos los derechos reservados.</p>
+    </div>
   </footer>
 
-  <script src="../java/script.js"></script>
+  <!-- JSON-LD Schema.org -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "FormatExp",
+    "url": "https://www.formatexp.com/",
+    "logo": "https://www.formatexp.com/assets/logo.png",
+    "description": "Toolkit de IA para profesores y academias que genera tests, resúmenes, guías de estudio, presentaciones y bancos de preguntas a partir de tus documentos.",
+    "sameAs": [],
+    "foundingDate": "2025",
+    "foundingLocation": "España"
+  }
+  </script>
+
+  <script src="./script.js"></script>
 </body>
 </html>

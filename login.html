@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Acceso — FormatExp</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Accede al panel de FormatExp para profesores y academias." />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body data-page="login">
+  <a class="skip-link" href="#main">Saltar al contenido principal</a>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="./index.html" class="brand" aria-label="FormatExp - Inicio">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="brand-text">
+          <span class="brand-name">FormatExp</span>
+          <span class="brand-tagline">IA para profesores</span>
+        </span>
+      </a>
+
+      <button class="nav-toggle" aria-expanded="false" aria-controls="primary-nav">
+        <span class="nav-toggle-bar"></span>
+        <span class="nav-toggle-bar"></span>
+        <span class="nav-toggle-bar"></span>
+        <span class="sr-only">Abrir menú de navegación</span>
+      </button>
+
+      <nav class="site-nav" id="primary-nav" aria-label="Navegación principal">
+        <ul>
+          <li><a href="./index.html#features">Funciones</a></li>
+          <li><a href="./index.html#pricing">Precios</a></li>
+          <li><a href="./index.html#faq">FAQ</a></li>
+        </ul>
+        <a href="./index.html" class="btn btn-ghost">Volver a inicio</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="section auth">
+      <div class="container auth-container">
+        <div class="auth-panel card">
+          <h1>Accede a tu panel</h1>
+          <p class="auth-subtitle">
+            Usa el mismo correo con el que te registraste en la lista de espera desde este navegador.
+          </p>
+
+          <form id="login-form" class="auth-form" novalidate>
+            <div class="field-group">
+              <label for="login-email">Correo electrónico</label>
+              <input
+                id="login-email"
+                name="login-email"
+                type="email"
+                autocomplete="email"
+                required
+                placeholder="tuemail@centroeducativo.com"
+              />
+            </div>
+
+            <div class="field-group">
+              <label for="login-plan">Plan esperado (no es contraseña)</label>
+              <select id="login-plan" name="login-plan">
+                <option value="">Cualquiera</option>
+                <option value="personal">Personal</option>
+                <option value="pro">Pro</option>
+                <option value="academia">Academia</option>
+              </select>
+              <p class="field-help">
+                Esto nos ayuda a precargar tu panel con créditos y opciones acordes.
+              </p>
+            </div>
+
+            <div class="field-group">
+              <button type="submit" class="btn btn-primary btn-lg">
+                Entrar al panel
+              </button>
+              <p class="field-help">
+                En el MVP no usamos contraseña: el acceso está vinculado al email con el que te registraste en este navegador.
+              </p>
+              <p class="field-error" id="login-error" aria-live="polite"></p>
+            </div>
+          </form>
+
+          <p class="auth-footnote">
+            ¿Aún no te has registrado?  
+            <a href="./index.html#hero">Apúntate a la lista de espera</a> y luego vuelve aquí.
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-bottom">
+      <p>© <span id="year"></span> FormatExp. Todos los derechos reservados.</p>
+    </div>
+  </footer>
+
+  <script src="./script.js"></script>
+</body>
+</html>
