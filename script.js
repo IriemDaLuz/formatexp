@@ -1,5 +1,10 @@
+// Claves de almacenamiento
+const STORAGE_WAITLIST_KEY = "formatexp_waitlist";
+const STORAGE_AUTH_KEY = "formatexp_auth";
+const STORAGE_MATERIALS_KEY = "formatexp_materials";
 
-const WAITLIST_ENDPOINT = "https://formspree.io/f/mnnwazvr";
+// Endpoint opcional para lista de espera 
+const WAITLIST_ENDPOINT = "https://formspree.io/f/mnnwazvr"; 
 
 const body = document.body;
 const page = body ? body.getAttribute("data-page") : "";
@@ -10,7 +15,7 @@ if (yearSpan) {
   yearSpan.textContent = new Date().getFullYear();
 }
 
-// Menú móvil común
+// Menú móvil
 const navToggle = document.querySelector(".nav-toggle");
 const nav = document.getElementById("primary-nav");
 
@@ -33,9 +38,27 @@ function isValidEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
-// -------------------------
-// LANDING: lista de espera
-// -------------------------
+function getStoredJson(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (_) {
+    return null;
+  }
+}
+
+function setStoredJson(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (_) {
+    // ignorar
+  }
+}
+
+// ===================
+// LANDING
+// ===================
 if (page === "landing") {
   const form = document.getElementById("waitlist-form");
   const nameInput = document.getElementById("name");
@@ -61,6 +84,16 @@ if (page === "landing") {
     return checked ? checked.value : "personal";
   }
 
+  // Si ya está logueado, cambiar CTA "Entrar"
+  const existingAuth = getStoredJson(STORAGE_AUTH_KEY);
+  if (existingAuth && existingAuth.loggedIn && existingAuth.email) {
+    const loginLink = document.querySelector('a[href="./login.html"]');
+    if (loginLink) {
+      loginLink.textContent = "Ir al panel";
+      loginLink.setAttribute("href", "./app.html");
+    }
+  }
+
   if (form) {
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -75,7 +108,7 @@ if (page === "landing") {
       const honeypotValue = honeypotInput ? honeypotInput.value.trim() : "";
 
       if (honeypotValue !== "") {
-        // Probable bot, no hacemos nada
+        // Probable bot
         return;
       }
 
@@ -121,69 +154,53 @@ if (page === "landing") {
       };
 
       // Guardar en localStorage (para login y app simulados)
-      try {
-        localStorage.setItem("formatexp_waitlist", JSON.stringify(payload));
-      } catch (_) {
-        // ignorar errores de almacenamiento
-      }
+      setStoredJson(STORAGE_WAITLIST_KEY, payload);
 
-      // Sin backend real: modo simulado
       if (!WAITLIST_ENDPOINT) {
         formSuccess.textContent =
-          "¡Gracias! Te hemos añadido a la lista de espera de FormatExp. Podrás acceder al panel desde este navegador.";
+          "¡Gracias! Te hemos añadido a la lista de espera. Podrás acceder al panel desde este navegador.";
         form.reset();
         return;
       }
 
       // Con backend real
-      // Con backend real (ejemplo Formspree)
-    try {
-    const response = await fetch(WAITLIST_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({
-        email: payload.email,
-        name: payload.name,
-        role: payload.role,
-        center: payload.center,
-        plan: payload.plan,
-        consent: payload.consent,
-        source: "formatexp-landing"
-        })
+      try {
+        const response = await fetch(WAITLIST_ENDPOINT, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          throw new Error("Error al enviar el formulario");
+        }
+
+        formSuccess.textContent =
+          "¡Gracias! Te hemos añadido a la lista de espera de FormatExp.";
+        form.reset();
+      } catch (error) {
+        console.error(error);
+        formError.textContent =
+          "Ha ocurrido un problema al enviar tus datos. Inténtalo de nuevo en unos minutos.";
+      }
     });
 
-    if (!response.ok) {
-        throw new Error("Error al enviar el formulario");
-    }
-
-    formSuccess.textContent =
-        "¡Gracias! Te hemos añadido a la lista de espera de FormatExp.";
-    form.reset();
-    } catch (error) {
-    console.error(error);
-    formError.textContent =
-        "Ha ocurrido un problema al enviar tus datos. Inténtalo de nuevo en unos minutos.";
-    }
-
-
     // Autocompletar desde localStorage si ya se registró antes
-    try {
-      const stored = localStorage.getItem("formatexp_waitlist");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed.name && nameInput) nameInput.value = parsed.name;
-        if (parsed.email && emailInput) emailInput.value = parsed.email;
-        if (parsed.role && roleSelect) roleSelect.value = parsed.role;
-        if (parsed.center && centerInput) centerInput.value = parsed.center;
-        if (parsed.plan) {
-          const radioToCheck = document.querySelector(
-            `input[name="plan"][value="${parsed.plan}"]`
-          );
-          if (radioToCheck) radioToCheck.checked = true;
-        }
+    const stored = getStoredJson(STORAGE_WAITLIST_KEY);
+    if (stored) {
+      if (stored.name && nameInput) nameInput.value = stored.name;
+      if (stored.email && emailInput) emailInput.value = stored.email;
+      if (stored.role && roleSelect) roleSelect.value = stored.role;
+      if (stored.center && centerInput) centerInput.value = stored.center;
+      if (stored.plan) {
+        const radioToCheck = document.querySelector(
+          `input[name="plan"][value="${stored.plan}"]`
+        );
+        if (radioToCheck) radioToCheck.checked = true;
       }
-    } catch (_) {
-      // ignorar
     }
   }
 
@@ -226,23 +243,39 @@ if (page === "landing") {
         formSuccess.textContent = message;
         formSuccess.scrollIntoView({ behavior: "smooth", block: "center" });
       }
+
+      // Seleccionar automáticamente el plan en el formulario
+      const radioToCheck = document.querySelector(
+        `input[name="plan"][value="${plan}"]`
+      );
+      if (radioToCheck) radioToCheck.checked = true;
     });
   });
 }
 
-// -------------------------
+// ===================
 // LOGIN
-// -------------------------
+// ===================
 if (page === "login") {
   const loginForm = document.getElementById("login-form");
   const loginEmailInput = document.getElementById("login-email");
   const loginPlanSelect = document.getElementById("login-plan");
   const loginError = document.getElementById("login-error");
 
+  // Si ya hay sesión, mandar directo al panel
+  const existingAuth = getStoredJson(STORAGE_AUTH_KEY);
+  if (existingAuth && existingAuth.loggedIn && existingAuth.email) {
+    window.location.href = "./app.html";
+  }
+
+  // Pre-rellenar email con el de la landing si existe
+  const waitlistData = getStoredJson(STORAGE_WAITLIST_KEY);
+  if (waitlistData && waitlistData.email && loginEmailInput) {
+    loginEmailInput.value = waitlistData.email;
+  }
+
   function showLoginError(message) {
-    if (loginError) {
-      loginError.textContent = message;
-    }
+    if (loginError) loginError.textContent = message;
   }
 
   if (loginForm) {
@@ -265,13 +298,7 @@ if (page === "login") {
         return;
       }
 
-      let stored = null;
-      try {
-        const raw = localStorage.getItem("formatexp_waitlist");
-        if (raw) stored = JSON.parse(raw);
-      } catch (_) {
-        // ignorar
-      }
+      const stored = getStoredJson(STORAGE_WAITLIST_KEY);
 
       if (!stored || !stored.email) {
         showLoginError(
@@ -290,9 +317,7 @@ if (page === "login") {
       // Actualizar plan si ha elegido uno diferente
       if (planSelected) {
         stored.plan = planSelected;
-        try {
-          localStorage.setItem("formatexp_waitlist", JSON.stringify(stored));
-        } catch (_) {}
+        setStoredJson(STORAGE_WAITLIST_KEY, stored);
       }
 
       const authData = {
@@ -305,33 +330,21 @@ if (page === "login") {
         date: new Date().toISOString()
       };
 
-      try {
-        localStorage.setItem("formatexp_auth", JSON.stringify(authData));
-      } catch (_) {
-        // ignorar
-      }
-
+      setStoredJson(STORAGE_AUTH_KEY, authData);
       window.location.href = "./app.html";
     });
   }
 }
 
-// -------------------------
+// ===================
 // APP / PANEL
-// -------------------------
+// ===================
 if (page === "app") {
-  let auth = null;
-  try {
-    const raw = localStorage.getItem("formatexp_auth");
-    if (raw) auth = JSON.parse(raw);
-  } catch (_) {
-    auth = null;
-  }
+  let auth = getStoredJson(STORAGE_AUTH_KEY);
 
   if (!auth || !auth.loggedIn || !auth.email) {
     window.location.href = "./login.html";
   } else {
-    // Referencias comunes
     const logoutBtn = document.getElementById("logout-btn");
     const appUserEmail = document.getElementById("app-user-email");
     const appUserPlan = document.getElementById("app-user-plan");
@@ -393,24 +406,13 @@ if (page === "app") {
       }
     }
 
-    // Materiales desde localStorage
     function getMaterials() {
-      try {
-        const raw = localStorage.getItem("formatexp_materials");
-        if (!raw) return [];
-        const arr = JSON.parse(raw);
-        return Array.isArray(arr) ? arr : [];
-      } catch (_) {
-        return [];
-      }
+      const arr = getStoredJson(STORAGE_MATERIALS_KEY);
+      return Array.isArray(arr) ? arr : [];
     }
 
     function saveMaterials(list) {
-      try {
-        localStorage.setItem("formatexp_materials", JSON.stringify(list));
-      } catch (_) {
-        // ignorar
-      }
+      setStoredJson(STORAGE_MATERIALS_KEY, list);
     }
 
     function getUsedCredits(materials) {
@@ -427,7 +429,6 @@ if (page === "app") {
       if (creditsRemainingSpan) creditsRemainingSpan.textContent = String(remaining);
     }
 
-    // Render historial
     function renderHistory() {
       const materials = getMaterials();
       if (!materials.length) {
@@ -480,7 +481,6 @@ if (page === "app") {
       }
     }
 
-    // Estimación de créditos según tipo
     function estimateCredits(type) {
       switch (type) {
         case "test":
@@ -505,7 +505,6 @@ if (page === "app") {
       updateEstimate();
     }
 
-    // Manejo de creación de material
     function clearMaterialMessages() {
       if (materialError) materialError.textContent = "";
       if (materialSuccess) materialSuccess.textContent = "";
@@ -575,26 +574,37 @@ if (page === "app") {
       });
     }
 
-    // Navegación dentro del panel
+    // Navegación con hash (#/create, #/history, etc.)
     function showSection(key) {
       Object.keys(sections).forEach((k) => {
         const section = sections[k];
         if (!section) return;
-        if (k === key) {
-          section.classList.add("is-visible");
-        } else {
-          section.classList.remove("is-visible");
-        }
+        if (k === key) section.classList.add("is-visible");
+        else section.classList.remove("is-visible");
       });
 
       navLinks.forEach((link) => {
         const sectionKey = link.getAttribute("data-section");
-        if (sectionKey === key) {
-          link.classList.add("is-active");
-        } else {
-          link.classList.remove("is-active");
-        }
+        if (sectionKey === key) link.classList.add("is-active");
+        else link.classList.remove("is-active");
       });
+
+      // Actualizar hash
+      window.location.hash = `#/${key}`;
+    }
+
+    function getKeyFromHash() {
+      const hash = window.location.hash || "";
+      if (hash.startsWith("#/")) {
+        const key = hash.slice(2);
+        if (sections[key]) return key;
+      }
+      return "create";
+    }
+
+    function initSectionFromHash() {
+      const key = getKeyFromHash();
+      showSection(key);
     }
 
     navLinks.forEach((link) => {
@@ -605,7 +615,9 @@ if (page === "app") {
       });
     });
 
-    // Enlace desde "Historial vacío" para ir a crear
+    window.addEventListener("hashchange", initSectionFromHash);
+
+    // Enlace "crear" desde historial vacío
     const goCreateLinks = document.querySelectorAll('[data-go="create"]');
     goCreateLinks.forEach((link) => {
       link.addEventListener("click", (event) => {
@@ -618,15 +630,15 @@ if (page === "app") {
     if (logoutBtn) {
       logoutBtn.addEventListener("click", () => {
         try {
-          localStorage.removeItem("formatexp_auth");
+          localStorage.removeItem(STORAGE_AUTH_KEY);
         } catch (_) {}
         window.location.href = "./login.html";
       });
     }
 
-    // Inicializar
+    // Inicializar panel
     renderHistory();
     updateCreditsUI();
-    showSection("create");
+    initSectionFromHash();
   }
 }
