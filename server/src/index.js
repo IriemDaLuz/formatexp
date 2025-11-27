@@ -13,12 +13,14 @@ const app = express();
 
 // Middlewares globales
 app.use(helmet());
-app.use(
-  cors({
-    origin: config.corsOrigin,
-    credentials: true
-  })
-);
+app.use(cors({
+  origin: [
+    "http://localhost:4173",
+    "https://https://formatexpapp.netlify.app/"
+  ],
+  credentials: true
+}));
+
 app.use(express.json());
 app.use(morgan("dev"));
 

@@ -3,8 +3,13 @@ const STORAGE_WAITLIST_KEY = "formatexp_waitlist";
 const STORAGE_AUTH_KEY = "formatexp_auth";
 const STORAGE_MATERIALS_KEY = "formatexp_materials";
 
-// Endpoint opcional para lista de espera 
-const WAITLIST_ENDPOINT = "https://formspree.io/f/mnnwazvr"; 
+// URL base de la API (local vs producción)
+const API_BASE_URL =
+  window.location.hostname === "localhost"
+    ? "http://localhost:4000/api"
+    : "https://formatexp.onrender.com"; 
+// Endpoint opcional para lista de espera (Formspree)
+const WAITLIST_ENDPOINT = "https://formspree.io/f/mnnwazvr";
 
 const body = document.body;
 const page = body ? body.getAttribute("data-page") : "";
@@ -86,7 +91,7 @@ if (page === "landing") {
 
   // Si ya está logueado, cambiar CTA "Entrar"
   const existingAuth = getStoredJson(STORAGE_AUTH_KEY);
-  if (existingAuth && existingAuth.loggedIn && existingAuth.email) {
+  if (existingAuth && existingAuth.token && existingAuth.user?.email) {
     const loginLink = document.querySelector('a[href="./login.html"]');
     if (loginLink) {
       loginLink.textContent = "Ir al panel";
@@ -153,39 +158,64 @@ if (page === "landing") {
         date: new Date().toISOString()
       };
 
-      // Guardar en localStorage (para login y app simulados)
+      // 1) Guardar en localStorage (para login y app simulados)
       setStoredJson(STORAGE_WAITLIST_KEY, payload);
 
-      if (!WAITLIST_ENDPOINT) {
-        formSuccess.textContent =
-          "¡Gracias! Te hemos añadido a la lista de espera. Podrás acceder al panel desde este navegador.";
-        form.reset();
-        return;
-      }
-
-      // Con backend real
+      // 2) Enviar a tu API real (MongoDB Atlas)
       try {
-        const response = await fetch(WAITLIST_ENDPOINT, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json"
-          },
-          body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
-          throw new Error("Error al enviar el formulario");
+        if (typeof API_BASE_URL === "string" && API_BASE_URL) {
+          await fetch(`${API_BASE_URL}/waitlist`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              ...payload,
+              source: "landing"
+            })
+          });
         }
-
-        formSuccess.textContent =
-          "¡Gracias! Te hemos añadido a la lista de espera de FormatExp.";
-        form.reset();
-      } catch (error) {
-        console.error(error);
-        formError.textContent =
-          "Ha ocurrido un problema al enviar tus datos. Inténtalo de nuevo en unos minutos.";
+      } catch (err) {
+        console.error("Error enviando a API /waitlist:", err);
+        // No rompemos la UX si la API falla
       }
+
+      // 3) Enviar a Formspree (para notificación/copia)
+      if (WAITLIST_ENDPOINT) {
+        try {
+          const response = await fetch(WAITLIST_ENDPOINT, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json"
+            },
+            body: JSON.stringify({
+              email: payload.email,
+              name: payload.name,
+              role: payload.role,
+              center: payload.center,
+              plan: payload.plan,
+              consent: payload.consent,
+              source: "formatexp-landing"
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error("Error al enviar el formulario (Formspree)");
+          }
+        } catch (error) {
+          console.error(error);
+          if (formError.textContent === "") {
+            formError.textContent =
+              "Hemos registrado tu interés, pero hubo un problema al notificar por correo. Revisaremos este error.";
+          }
+        }
+      }
+
+      // 4) Mensaje de éxito al usuario
+      formSuccess.textContent =
+        "¡Gracias! Te hemos añadido a la lista de espera de FormatExp.";
+      form.reset();
     });
 
     // Autocompletar desde localStorage si ya se registró antes
@@ -254,36 +284,97 @@ if (page === "landing") {
 }
 
 // ===================
-// LOGIN
+// LOGIN (real contra API)
 // ===================
 if (page === "login") {
   const loginForm = document.getElementById("login-form");
   const loginEmailInput = document.getElementById("login-email");
+  const loginPasswordInput = document.getElementById("login-password");
   const loginPlanSelect = document.getElementById("login-plan");
   const loginError = document.getElementById("login-error");
 
   // Si ya hay sesión, mandar directo al panel
   const existingAuth = getStoredJson(STORAGE_AUTH_KEY);
-  if (existingAuth && existingAuth.loggedIn && existingAuth.email) {
+  if (existingAuth && existingAuth.token && existingAuth.user?.email) {
     window.location.href = "./app.html";
   }
 
-  // Pre-rellenar email con el de la landing si existe
+  // Pre-rellenar email y plan con el de la landing si existe
   const waitlistData = getStoredJson(STORAGE_WAITLIST_KEY);
   if (waitlistData && waitlistData.email && loginEmailInput) {
     loginEmailInput.value = waitlistData.email;
+  }
+  if (waitlistData && waitlistData.plan && loginPlanSelect) {
+    loginPlanSelect.value = waitlistData.plan;
   }
 
   function showLoginError(message) {
     if (loginError) loginError.textContent = message;
   }
 
+  async function loginViaApi(email, password) {
+    const res = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ email, password })
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      const msg = data.error || "No se ha podido iniciar sesión.";
+      const err = new Error(msg);
+      err.status = res.status;
+      throw err;
+    }
+
+    return res.json();
+  }
+
+  async function registerViaApi(email, password, planSelected) {
+    const waitlist = getStoredJson(STORAGE_WAITLIST_KEY) || {};
+
+    const body = {
+      name:
+        waitlist.name ||
+        email.split("@")[0] ||
+        "Profesor FormatExp",
+      email,
+      password,
+      role: waitlist.role || "otros",
+      center: waitlist.center || "",
+      plan: planSelected || waitlist.plan || "personal"
+    };
+
+    const res = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      const msg = data.error || "No se ha podido crear tu cuenta.";
+      const err = new Error(msg);
+      err.status = res.status;
+      throw err;
+    }
+
+    return res.json();
+  }
+
   if (loginForm) {
-    loginForm.addEventListener("submit", (event) => {
+    loginForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       if (loginError) loginError.textContent = "";
 
       const emailValue = loginEmailInput ? loginEmailInput.value.trim() : "";
+      const passwordValue = loginPasswordInput
+        ? loginPasswordInput.value
+        : "";
       const planSelected = loginPlanSelect ? loginPlanSelect.value : "";
 
       if (!emailValue) {
@@ -298,40 +389,53 @@ if (page === "login") {
         return;
       }
 
-      const stored = getStoredJson(STORAGE_WAITLIST_KEY);
-
-      if (!stored || !stored.email) {
+      if (!passwordValue || passwordValue.length < 6) {
         showLoginError(
-          "No encontramos tu registro en este navegador. Apúntate primero en la lista de espera."
+          "Introduce una contraseña de al menos 6 caracteres."
         );
+        if (loginPasswordInput) loginPasswordInput.focus();
         return;
       }
 
-      if (stored.email.toLowerCase() !== emailValue.toLowerCase()) {
-        showLoginError(
-          "El correo no coincide con el que usaste al registrarte en esta beta desde este navegador."
-        );
-        return;
+      try {
+        let data;
+
+        // 1) Intentar login primero
+        try {
+          data = await loginViaApi(emailValue, passwordValue);
+        } catch (err) {
+          // Si es 401/404, intentamos registro automático (primer acceso)
+          if (err.status === 401 || err.status === 404) {
+            data = await registerViaApi(
+              emailValue,
+              passwordValue,
+              planSelected
+            );
+          } else {
+            throw err;
+          }
+        }
+
+        // data: { token, user }
+        const authData = {
+          token: data.token,
+          user: data.user
+        };
+
+        setStoredJson(STORAGE_AUTH_KEY, authData);
+
+        // también actualizamos waitlist local con plan, por coherencia
+        if (waitlistData) {
+          waitlistData.plan =
+            planSelected || waitlistData.plan || "personal";
+          setStoredJson(STORAGE_WAITLIST_KEY, waitlistData);
+        }
+
+        window.location.href = "./app.html";
+      } catch (err) {
+        console.error(err);
+        showLoginError(err.message || "No se ha podido autenticar tu cuenta.");
       }
-
-      // Actualizar plan si ha elegido uno diferente
-      if (planSelected) {
-        stored.plan = planSelected;
-        setStoredJson(STORAGE_WAITLIST_KEY, stored);
-      }
-
-      const authData = {
-        email: stored.email,
-        name: stored.name || "",
-        role: stored.role || "",
-        center: stored.center || "",
-        plan: stored.plan || "personal",
-        loggedIn: true,
-        date: new Date().toISOString()
-      };
-
-      setStoredJson(STORAGE_AUTH_KEY, authData);
-      window.location.href = "./app.html";
     });
   }
 }
@@ -342,9 +446,12 @@ if (page === "login") {
 if (page === "app") {
   let auth = getStoredJson(STORAGE_AUTH_KEY);
 
-  if (!auth || !auth.loggedIn || !auth.email) {
+  if (!auth || !auth.token || !auth.user || !auth.user.email) {
     window.location.href = "./login.html";
   } else {
+    const currentUser = auth.user;
+    let materials = []; // cache local en memoria
+
     const logoutBtn = document.getElementById("logout-btn");
     const appUserEmail = document.getElementById("app-user-email");
     const appUserPlan = document.getElementById("app-user-plan");
@@ -378,19 +485,19 @@ if (page === "app") {
     const historyBody = document.getElementById("history-body");
 
     // Rellenar info de usuario/cuenta
-    if (appUserEmail) appUserEmail.textContent = auth.email || "";
+    if (appUserEmail) appUserEmail.textContent = currentUser.email || "";
     const planMap = {
       personal: "Plan Personal",
       pro: "Plan Pro",
       academia: "Plan Academia"
     };
-    const planLabel = planMap[auth.plan] || "Plan Personal";
+    const planLabel = planMap[currentUser.plan] || "Plan Personal";
     if (appUserPlan) appUserPlan.textContent = planLabel;
 
-    if (accountName) accountName.textContent = auth.name || "—";
-    if (accountEmail) accountEmail.textContent = auth.email || "—";
-    if (accountRole) accountRole.textContent = auth.role || "—";
-    if (accountCenter) accountCenter.textContent = auth.center || "—";
+    if (accountName) accountName.textContent = currentUser.name || "—";
+    if (accountEmail) accountEmail.textContent = currentUser.email || "—";
+    if (accountRole) accountRole.textContent = currentUser.role || "—";
+    if (accountCenter) accountCenter.textContent = currentUser.center || "—";
     if (accountPlan) accountPlan.textContent = planLabel;
 
     // Créditos por plan
@@ -406,31 +513,31 @@ if (page === "app") {
       }
     }
 
-    function getMaterials() {
+    // ---- Gestión de materiales (cache + API + localStorage) ----
+    function loadMaterialsFromStorage() {
       const arr = getStoredJson(STORAGE_MATERIALS_KEY);
-      return Array.isArray(arr) ? arr : [];
+      materials = Array.isArray(arr) ? arr : [];
     }
 
-    function saveMaterials(list) {
-      setStoredJson(STORAGE_MATERIALS_KEY, list);
+    function saveMaterialsToStorage() {
+      setStoredJson(STORAGE_MATERIALS_KEY, materials);
     }
 
-    function getUsedCredits(materials) {
+    function getUsedCredits() {
       return materials.reduce((acc, item) => acc + (item.credits || 0), 0);
     }
 
     function updateCreditsUI() {
-      const materials = getMaterials();
-      const total = getTotalCreditsForPlan(auth.plan);
-      const used = getUsedCredits(materials);
+      const total = getTotalCreditsForPlan(currentUser.plan);
+      const used = getUsedCredits();
       const remaining = Math.max(total - used, 0);
 
       if (creditsTotalSpan) creditsTotalSpan.textContent = String(total);
-      if (creditsRemainingSpan) creditsRemainingSpan.textContent = String(remaining);
+      if (creditsRemainingSpan)
+        creditsRemainingSpan.textContent = String(remaining);
     }
 
     function renderHistory() {
-      const materials = getMaterials();
       if (!materials.length) {
         if (historyEmpty) historyEmpty.hidden = false;
         if (historyList) historyList.hidden = true;
@@ -481,6 +588,51 @@ if (page === "app") {
       }
     }
 
+    async function syncMaterialsFromApi() {
+      if (!API_BASE_URL || !auth.token) return;
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/materials`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${auth.token}`
+          }
+        });
+
+        if (!res.ok) {
+          console.warn("No se pudieron cargar materiales desde API.");
+          return;
+        }
+
+        const data = await res.json().catch(() => []);
+        // asumimos formato { materials: [...] } o directamente [...]
+        const remote = Array.isArray(data)
+          ? data
+          : Array.isArray(data.materials)
+          ? data.materials
+          : [];
+
+        if (remote.length) {
+          // opcional: podríamos mergear, por ahora sobreescribimos
+          materials = remote.map((m) => ({
+            id: m.id || m._id || Date.now(),
+            title: m.title,
+            type: m.type,
+            sourceLength: m.sourceLength || 0,
+            questions: m.questions || 0,
+            createdAt: m.createdAt || new Date().toISOString(),
+            credits: m.estimatedCredits || m.credits || 0,
+            status: m.status || "Generado"
+          }));
+          saveMaterialsToStorage();
+          renderHistory();
+          updateCreditsUI();
+        }
+      } catch (err) {
+        console.error("Error sincronizando materiales desde API:", err);
+      }
+    }
+
     function estimateCredits(type) {
       switch (type) {
         case "test":
@@ -511,7 +663,7 @@ if (page === "app") {
     }
 
     if (materialForm) {
-      materialForm.addEventListener("submit", (event) => {
+      materialForm.addEventListener("submit", async (event) => {
         event.preventDefault();
         clearMaterialMessages();
 
@@ -533,9 +685,8 @@ if (page === "app") {
         }
 
         const estimate = estimateCredits(type);
-        const materials = getMaterials();
-        const total = getTotalCreditsForPlan(auth.plan);
-        const used = getUsedCredits(materials);
+        const total = getTotalCreditsForPlan(currentUser.plan);
+        const used = getUsedCredits();
         const remaining = Math.max(total - used, 0);
 
         if (estimate > remaining) {
@@ -545,6 +696,7 @@ if (page === "app") {
           return;
         }
 
+        // Item local
         const newItem = {
           id: Date.now(),
           title,
@@ -556,8 +708,41 @@ if (page === "app") {
           status: "Generado (simulado)"
         };
 
+        // Intentar guardar también en la API
+        try {
+          if (API_BASE_URL && auth.token) {
+            const res = await fetch(`${API_BASE_URL}/materials`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${auth.token}`
+              },
+              body: JSON.stringify({
+                title,
+                type,
+                source,
+                questions: isNaN(questions) ? 0 : questions,
+                estimatedCredits: estimate
+              })
+            });
+
+            if (res.ok) {
+              const data = await res.json().catch(() => ({}));
+              const m = data.material || data;
+              if (m) {
+                newItem.id = m.id || m._id || newItem.id;
+                newItem.status = m.status || "Generado";
+              }
+            } else {
+              console.warn("No se pudo guardar el material en la API.");
+            }
+          }
+        } catch (err) {
+          console.error("Error guardando material en API:", err);
+        }
+
         materials.push(newItem);
-        saveMaterials(materials);
+        saveMaterialsToStorage();
         renderHistory();
         updateCreditsUI();
 
@@ -568,7 +753,9 @@ if (page === "app") {
         materialForm.reset();
 
         if (materialTypeSelect && creditsEstimateSpan) {
-          const defaultEstimate = estimateCredits(materialTypeSelect.value || "test");
+          const defaultEstimate = estimateCredits(
+            materialTypeSelect.value || "test"
+          );
           creditsEstimateSpan.textContent = String(defaultEstimate);
         }
       });
@@ -637,8 +824,17 @@ if (page === "app") {
     }
 
     // Inicializar panel
-    renderHistory();
-    updateCreditsUI();
-    initSectionFromHash();
+    function initPanel() {
+      // 1) Cargar lo que haya en localStorage para no mostrar vacío
+      loadMaterialsFromStorage();
+      renderHistory();
+      updateCreditsUI();
+      initSectionFromHash();
+
+      // 2) Intentar sincronizar con API (sobreescribe si hay datos)
+      syncMaterialsFromApi();
+    }
+
+    initPanel();
   }
 }

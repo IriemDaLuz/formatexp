@@ -47,42 +47,45 @@
             Usa el mismo correo con el que te registraste en la lista de espera desde este navegador.
           </p>
 
-          <form id="login-form" class="auth-form" novalidate>
-            <div class="field-group">
-              <label for="login-email">Correo electrónico</label>
-              <input
-                id="login-email"
-                name="login-email"
-                type="email"
-                autocomplete="email"
-                required
-                placeholder="tuemail@centroeducativo.com"
-              />
-            </div>
+          <form id="login-form" novalidate>
+  <div class="form-field">
+    <label for="login-email">Correo electrónico</label>
+    <input
+      id="login-email"
+      type="email"
+      autocomplete="email"
+      required
+    />
+  </div>
 
-            <div class="field-group">
-              <label for="login-plan">Plan esperado (no es contraseña)</label>
-              <select id="login-plan" name="login-plan">
-                <option value="">Cualquiera</option>
-                <option value="personal">Personal</option>
-                <option value="pro">Pro</option>
-                <option value="academia">Academia</option>
-              </select>
-              <p class="field-help">
-                Esto nos ayuda a precargar tu panel con créditos y opciones acordes.
-              </p>
-            </div>
+  <div class="form-field">
+    <label for="login-password">Contraseña</label>
+    <input
+      id="login-password"
+      type="password"
+      autocomplete="current-password"
+      required
+      minlength="6"
+    />
+    <small class="field-hint">
+      Mínimo 6 caracteres. Si es tu primera vez, crearemos tu cuenta con estos datos.
+    </small>
+  </div>
 
-            <div class="field-group">
-              <button type="submit" class="btn btn-primary btn-lg">
-                Entrar al panel
-              </button>
-              <p class="field-help">
-                En el MVP no usamos contraseña: el acceso está vinculado al email con el que te registraste en este navegador.
-              </p>
-              <p class="field-error" id="login-error" aria-live="polite"></p>
-            </div>
-          </form>
+  <div class="form-field">
+    <label for="login-plan">Plan previsto</label>
+    <select id="login-plan">
+      <option value="personal">Plan Personal</option>
+      <option value="pro">Plan Pro</option>
+      <option value="academia">Plan Academia</option>
+    </select>
+  </div>
+
+  <p id="login-error" class="form-error" aria-live="polite"></p>
+
+  <button type="submit" class="btn btn-primary">Entrar al panel</button>
+</form>
+
 
           <p class="auth-footnote">
             ¿Aún no te has registrado?  
