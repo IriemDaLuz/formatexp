@@ -15,17 +15,42 @@ import { errorHandler } from "./middleware/errorHandler.js";
 
 const app = express();
 
-// Middlewares globales
+/**
+ * ✅ CORS robusto:
+ * - Permite localhost
+ * - Permite Netlify (tu dominio)
+ * - Permite requests sin Origin (curl/postman/health checks)
+ */
+const ALLOWED_ORIGINS = new Set([
+  "http://localhost:4173",
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "https://formatexpapp.netlify.app"
+  // Si usas dominio con www, añade:
+  // "https://www.formatexpapp.netlify.app",
+]);
+
 app.use(helmet());
+
+// Preflight y CORS
 app.use(
   cors({
-    origin: [
-      "http://localhost:4173",
-      "https://formatexpapp.netlify.app"
-    ],
-    credentials: true
+    origin: (origin, callback) => {
+      // Permitir requests sin origin (curl, health checks)
+      if (!origin) return callback(null, true);
+
+      if (ALLOWED_ORIGINS.has(origin)) return callback(null, true);
+
+      return callback(new Error(`CORS bloqueado para origin: ${origin}`), false);
+    },
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: false // ✅ para tu caso (JWT Bearer), no cookies
   })
 );
+
+//  Asegura que preflight responde siempre
+app.options("*", cors());
 
 // Si vas a pegar textos largos (PDF/pegar apuntes) sube el limit:
 app.use(express.json({ limit: "1mb" }));
@@ -53,7 +78,7 @@ app.use(errorHandler);
 async function start() {
   await connectDB();
   app.listen(config.port, () => {
-    console.log(` API FormatExp escuchando en http://localhost:${config.port}`);
+    console.log(`API FormatExp escuchando en http://localhost:${config.port}`);
   });
 }
 
