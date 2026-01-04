@@ -1,7 +1,9 @@
 import express from "express";
-import { openai, OPENAI_MODEL } from "../services/openai.js";
+import { getOpenAIClient, OPENAI_MODEL } from "../services/openai.js";
 
 const router = express.Router();
+
+
 
 /**
  * POST /api/generate

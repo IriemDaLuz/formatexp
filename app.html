@@ -1,3 +1,4 @@
+<!-- /app.html -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -58,12 +59,11 @@
       </aside>
 
       <section class="app-content">
-        <!-- BANNER BETA -->
-        <section class="app-beta-banner" aria-label="Aviso de beta">
-          <p class="app-beta-title">Beta de FormatExp</p>
+        <!-- BANNER -->
+        <section class="app-beta-banner" aria-label="Aviso de estado">
+          <p class="app-beta-title">Demo funcional (IA real)</p>
           <p class="app-beta-text">
-            Estás usando una versión temprana. La generación con IA ya funciona (texto pegado).
-            En próximas iteraciones añadiremos subida de PDF/Word, exportación avanzada y mejoras de calidad.
+            Ya puedes generar materiales con IA. Próximo paso: exportación PDF/Word, plantillas y organización por carpetas.
           </p>
         </section>
 
@@ -71,7 +71,7 @@
         <section id="section-create" class="app-section is-visible" aria-label="Crear nuevo material">
           <h1>Crear nuevo material</h1>
           <p class="section-intro">
-            Pega tu contenido, elige el tipo de material y deja que la IA prepare una primera versión lista para clase.
+            Pega tu contenido, elige el tipo de material y genera una primera versión lista para clase.
           </p>
 
           <form id="material-form" class="material-form" novalidate>
@@ -94,6 +94,9 @@
                 <option value="guia">Guía de estudio</option>
                 <option value="presentacion">Presentación para clase</option>
               </select>
+              <p class="field-help">
+                Presentación: en esta demo generamos un guion + estructura (fase 2 será PPT real).
+              </p>
             </div>
 
             <div class="field-group">
@@ -101,11 +104,11 @@
               <textarea
                 id="material-source"
                 name="material-source"
-                rows="6"
+                rows="7"
                 placeholder="Pega aquí el texto principal, temario o resumen del documento..."
               ></textarea>
               <p class="field-help">
-                MVP: pega texto. Próximamente podrás subir PDFs y documentos completos.
+                Consejo: pega mínimo 6-10 líneas para mejores resultados.
               </p>
             </div>
 
@@ -119,18 +122,15 @@
             </div>
 
             <div class="field-group">
-              <label for="material-questions">Número aproximado de preguntas (para tests)</label>
+              <label for="material-questions">Número de preguntas (solo tests)</label>
               <input
                 id="material-questions"
                 name="material-questions"
                 type="number"
-                min="1"
-                max="100"
-                placeholder="Ej. 20"
+                min="3"
+                max="25"
+                placeholder="Ej. 10"
               />
-              <p class="field-help">
-                Para resúmenes y guías, este valor puede ignorarse.
-              </p>
             </div>
 
             <div class="field-group">
@@ -141,27 +141,33 @@
             </div>
 
             <div class="field-group">
-              <button type="submit" class="btn btn-primary btn-lg">
-                Generar material
+              <button type="submit" class="btn btn-primary btn-lg" id="generate-btn">
+                Generar con IA
               </button>
               <p class="field-error" id="material-error" aria-live="polite"></p>
               <p class="field-success" id="material-success" aria-live="polite"></p>
             </div>
           </form>
 
-          <!-- RESULTADO IA -->
-          <section class="output-card" aria-labelledby="output-title">
-            <h2 id="output-title">Resultado</h2>
-            <pre id="generated-output" class="generated-output" aria-live="polite"></pre>
+          <!-- RESULTADO -->
+          <section class="card" style="margin-top: 1.25rem;" aria-label="Resultado generado">
+            <h2 style="margin-top:0;">Resultado</h2>
+            <p class="field-help" style="margin-top:-0.25rem;">
+              Copia, edita o úsalo como base. Próximo paso: exportación a PDF/Word.
+            </p>
 
-            <div class="output-actions">
-              <button type="button" class="btn btn-secondary" id="copy-output-btn">
-                Copiar
-              </button>
-              <button type="button" class="btn btn-secondary" id="download-output-btn">
-                Descargar .txt
-              </button>
+            <div class="field-group">
+              <label for="generated-output">Texto generado</label>
+              <textarea id="generated-output" rows="14" placeholder="Aquí aparecerá la generación..." readonly></textarea>
+              <p class="field-help" id="generated-meta" aria-live="polite"></p>
             </div>
+
+            <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
+              <button type="button" class="btn btn-outline" id="copy-output-btn">Copiar</button>
+              <button type="button" class="btn btn-ghost" id="clear-output-btn">Limpiar</button>
+            </div>
+
+            <p class="field-success" id="copy-success" aria-live="polite"></p>
           </section>
         </section>
 
@@ -169,7 +175,7 @@
         <section id="section-history" class="app-section" aria-label="Historial de materiales generados">
           <h1>Historial de materiales</h1>
           <p class="section-intro">
-            Aquí verás los materiales que has generado con FormatExp en este navegador.
+            Aquí verás los materiales generados en este navegador.
           </p>
 
           <div id="history-empty" class="history-empty">
@@ -188,10 +194,12 @@
                   <th>Estado</th>
                 </tr>
               </thead>
-              <tbody id="history-body">
-                <!-- Relleno por JS -->
-              </tbody>
+              <tbody id="history-body"></tbody>
             </table>
+
+            <p class="field-help" style="margin-top:0.9rem;">
+              Sugerencia: en el siguiente paso añadimos “Abrir” para ver/editar/exportar cada material.
+            </p>
           </div>
         </section>
 
@@ -221,7 +229,6 @@
           <h1>Tu cuenta</h1>
           <p class="section-intro">
             Información básica de tu perfil tal y como la tenemos en este navegador.
-            En el MVP real se gestionará desde el backend.
           </p>
 
           <div class="card account-card">
@@ -247,9 +254,6 @@
                 <dd id="account-plan">—</dd>
               </div>
             </dl>
-            <p class="field-help">
-              Para actualizar estos datos, vuelve a registrarte en la landing con la información correcta.
-            </p>
           </div>
         </section>
       </section>

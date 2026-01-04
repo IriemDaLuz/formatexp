@@ -1,10 +1,11 @@
+// /script.js
+
 // Claves de almacenamiento
 const STORAGE_WAITLIST_KEY = "formatexp_waitlist";
 const STORAGE_AUTH_KEY = "formatexp_auth";
 const STORAGE_MATERIALS_KEY = "formatexp_materials";
 
 // URL base de la API (local vs producción)
-// ✅ En producción debe incluir /api
 const API_BASE_URL =
   window.location.hostname === "localhost"
     ? "http://localhost:4000/api"
@@ -18,9 +19,7 @@ const page = body ? body.getAttribute("data-page") : "";
 
 // Utilidades comunes
 const yearSpan = document.getElementById("year");
-if (yearSpan) {
-  yearSpan.textContent = new Date().getFullYear();
-}
+if (yearSpan) yearSpan.textContent = new Date().getFullYear();
 
 // Menú móvil
 const navToggle = document.querySelector(".nav-toggle");
@@ -34,7 +33,7 @@ if (navToggle && nav) {
 
   nav.addEventListener("click", (event) => {
     const target = event.target;
-    if (target.tagName === "A" && nav.classList.contains("open")) {
+    if (target && target.tagName === "A" && nav.classList.contains("open")) {
       nav.classList.remove("open");
       navToggle.setAttribute("aria-expanded", "false");
     }
@@ -58,25 +57,7 @@ function getStoredJson(key) {
 function setStoredJson(key, value) {
   try {
     localStorage.setItem(key, JSON.stringify(value));
-  } catch (_) {
-    // ignorar
-  }
-}
-
-function safeText(value) {
-  return String(value || "").trim();
-}
-
-function downloadTextFile(filename, text) {
-  const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
+  } catch (_) {}
 }
 
 // ===================
@@ -93,9 +74,7 @@ if (page === "landing") {
   const formError = document.getElementById("form-error");
   const formSuccess = document.getElementById("form-success");
   const faqButtons = document.querySelectorAll(".faq-question");
-  const pricingButtons = document.querySelectorAll(
-    ".pricing-card button[data-plan]"
-  );
+  const pricingButtons = document.querySelectorAll(".pricing-card button[data-plan]");
 
   function clearMessages() {
     if (formError) formError.textContent = "";
@@ -107,7 +86,6 @@ if (page === "landing") {
     return checked ? checked.value : "personal";
   }
 
-  // Si ya está logueado, cambiar CTA "Entrar"
   const existingAuth = getStoredJson(STORAGE_AUTH_KEY);
   if (existingAuth && existingAuth.token && existingAuth.user?.email) {
     const loginLink = document.querySelector('a[href="./login.html"]');
@@ -130,39 +108,36 @@ if (page === "landing") {
       const consentGiven = consentCheckbox ? consentCheckbox.checked : false;
       const honeypotValue = honeypotInput ? honeypotInput.value.trim() : "";
 
-      if (honeypotValue !== "") {
-        // Probable bot
-        return;
-      }
+      if (honeypotValue !== "") return;
 
       if (!nameValue) {
         formError.textContent = "Por favor, indica tu nombre y apellidos.";
-        if (nameInput) nameInput.focus();
+        nameInput?.focus();
         return;
       }
 
       if (!emailValue) {
         formError.textContent = "Por favor, introduce tu correo electrónico.";
-        if (emailInput) emailInput.focus();
+        emailInput?.focus();
         return;
       }
 
       if (!isValidEmail(emailValue)) {
         formError.textContent = "El formato del correo no parece válido.";
-        if (emailInput) emailInput.focus();
+        emailInput?.focus();
         return;
       }
 
       if (!roleValue) {
         formError.textContent = "Por favor, selecciona tu perfil docente.";
-        if (roleSelect) roleSelect.focus();
+        roleSelect?.focus();
         return;
       }
 
       if (!consentGiven) {
         formError.textContent =
           "Necesitamos tu consentimiento para poder contactarte sobre FormatExp.";
-        if (consentCheckbox) consentCheckbox.focus();
+        consentCheckbox?.focus();
         return;
       }
 
@@ -176,28 +151,21 @@ if (page === "landing") {
         date: new Date().toISOString()
       };
 
-      // 1) Guardar en localStorage
+      // 1) local
       setStoredJson(STORAGE_WAITLIST_KEY, payload);
 
-      // 2) Enviar a tu API real (MongoDB Atlas)
+      // 2) API (no rompe UX si falla)
       try {
-        if (typeof API_BASE_URL === "string" && API_BASE_URL) {
-          await fetch(`${API_BASE_URL}/waitlist`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              ...payload,
-              source: "landing"
-            })
-          });
-        }
+        await fetch(`${API_BASE_URL}/waitlist`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...payload, source: "landing" })
+        });
       } catch (err) {
         console.error("Error enviando a API /waitlist:", err);
       }
 
-      // 3) Enviar a Formspree (notificación/copia)
+      // 3) Formspree
       if (WAITLIST_ENDPOINT) {
         try {
           const response = await fetch(WAITLIST_ENDPOINT, {
@@ -217,25 +185,20 @@ if (page === "landing") {
             })
           });
 
-          if (!response.ok) {
-            throw new Error("Error al enviar el formulario (Formspree)");
-          }
+          if (!response.ok) throw new Error("Error al enviar el formulario (Formspree)");
         } catch (error) {
           console.error(error);
-          if (formError.textContent === "") {
+          if (!formError.textContent) {
             formError.textContent =
               "Hemos registrado tu interés, pero hubo un problema al notificar por correo. Revisaremos este error.";
           }
         }
       }
 
-      // 4) Mensaje de éxito
-      formSuccess.textContent =
-        "¡Gracias! Te hemos añadido a la lista de espera de FormatExp.";
+      formSuccess.textContent = "¡Gracias! Te hemos añadido a la lista de espera de FormatExp.";
       form.reset();
     });
 
-    // Autocompletar desde localStorage si ya se registró antes
     const stored = getStoredJson(STORAGE_WAITLIST_KEY);
     if (stored) {
       if (stored.name && nameInput) nameInput.value = stored.name;
@@ -243,27 +206,21 @@ if (page === "landing") {
       if (stored.role && roleSelect) roleSelect.value = stored.role;
       if (stored.center && centerInput) centerInput.value = stored.center;
       if (stored.plan) {
-        const radioToCheck = document.querySelector(
-          `input[name="plan"][value="${stored.plan}"]`
-        );
+        const radioToCheck = document.querySelector(`input[name="plan"][value="${stored.plan}"]`);
         if (radioToCheck) radioToCheck.checked = true;
       }
     }
   }
 
-  // FAQ acordeones
   faqButtons.forEach((button) => {
     button.addEventListener("click", () => {
       const expanded = button.getAttribute("aria-expanded") === "true";
       const answer = button.nextElementSibling;
       button.setAttribute("aria-expanded", String(!expanded));
-      if (answer) {
-        answer.hidden = expanded;
-      }
+      if (answer) answer.hidden = expanded;
     });
   });
 
-  // CTA desde pricing -> mensaje en el form
   pricingButtons.forEach((button) => {
     button.addEventListener("click", () => {
       const plan = button.getAttribute("data-plan");
@@ -271,37 +228,30 @@ if (page === "landing") {
 
       switch (plan) {
         case "personal":
-          message =
-            "Has mostrado interés en el Plan Personal. Lo tendremos en cuenta al priorizar invitaciones.";
+          message = "Has mostrado interés en el Plan Personal. Lo tendremos en cuenta al priorizar invitaciones.";
           break;
         case "pro":
-          message =
-            "Has mostrado interés en el Plan Pro. Priorizaremos tu acceso cuando el generador de presentaciones esté listo.";
+          message = "Has mostrado interés en el Plan Pro. Priorizaremos tu acceso cuando el generador de presentaciones esté listo.";
           break;
         case "academia":
-          message =
-            "Has mostrado interés en el Plan Academia. Te contactaremos para coordinar una demo personalizada.";
-          break;
-        default:
+          message = "Has mostrado interés en el Plan Academia. Te contactaremos para coordinar una demo personalizada.";
           break;
       }
 
-      if (formSuccess) {
+      if (document.getElementById("form-success")) {
+        const formSuccess = document.getElementById("form-success");
         formSuccess.textContent = message;
         formSuccess.scrollIntoView({ behavior: "smooth", block: "center" });
       }
 
-      // Seleccionar automáticamente el plan en el formulario
-      const radioToCheck = document.querySelector(
-        `input[name="plan"][value="${plan}"]`
-      );
+      const radioToCheck = document.querySelector(`input[name="plan"][value="${plan}"]`);
       if (radioToCheck) radioToCheck.checked = true;
     });
   });
 }
 
 // ===================
-// LOGIN (real contra API)
+// LOGIN
 // ===================
 if (page === "login") {
   const loginForm = document.getElementById("login-form");
@@ -310,20 +260,14 @@ if (page === "login") {
   const loginPlanSelect = document.getElementById("login-plan");
   const loginError = document.getElementById("login-error");
 
-  // Si ya hay sesión, mandar directo al panel
   const existingAuth = getStoredJson(STORAGE_AUTH_KEY);
   if (existingAuth && existingAuth.token && existingAuth.user?.email) {
     window.location.href = "./app.html";
   }
 
-  // Pre-rellenar email y plan con el de la landing si existe
   const waitlistData = getStoredJson(STORAGE_WAITLIST_KEY);
-  if (waitlistData && waitlistData.email && loginEmailInput) {
-    loginEmailInput.value = waitlistData.email;
-  }
-  if (waitlistData && waitlistData.plan && loginPlanSelect) {
-    loginPlanSelect.value = waitlistData.plan;
-  }
+  if (waitlistData?.email && loginEmailInput) loginEmailInput.value = waitlistData.email;
+  if (waitlistData?.plan && loginPlanSelect) loginPlanSelect.value = waitlistData.plan;
 
   function showLoginError(message) {
     if (loginError) loginError.textContent = message;
@@ -343,20 +287,19 @@ if (page === "login") {
       err.status = res.status;
       throw err;
     }
-
     return res.json();
   }
 
   async function registerViaApi(email, password, planSelected) {
-    const waitlist = getStoredJson(STORAGE_WAITLIST_KEY) || {};
-
+    const wait
+    = getStoredJson(STORAGE_WAITLIST_KEY) || {};
     const body = {
-      name: waitlist.name || email.split("@")[0] || "Profesor FormatExp",
+      name: (R.name || email.split("@")[0] || "Profesor FormatExp"),
       email,
       password,
-      role: waitlist.role || "otros",
-      center: waitlist.center || "",
-      plan: planSelected || waitlist.plan || "personal"
+      role: R.role || "otros",
+      center: R.center || "",
+      plan: planSelected || R.plan || "personal"
     };
 
     const res = await fetch(`${API_BASE_URL}/auth/register`, {
@@ -372,7 +315,6 @@ if (page === "login") {
       err.status = res.status;
       throw err;
     }
-
     return res.json();
   }
 
@@ -406,11 +348,9 @@ if (page === "login") {
       try {
         let data;
 
-        // 1) Intentar login primero
         try {
           data = await loginViaApi(emailValue, passwordValue);
         } catch (err) {
-          // 401/404 -> registro automático primer acceso
           if (err.status === 401 || err.status === 404) {
             data = await registerViaApi(emailValue, passwordValue, planSelected);
           } else {
@@ -418,13 +358,12 @@ if (page === "login") {
           }
         }
 
-        const authData = { token: data.token, user: data.user };
-        setStoredJson(STORAGE_AUTH_KEY, authData);
+        setStoredJson(STORAGE_AUTH_KEY, { token: data.token, user: data.user });
 
-        // actualizar waitlist local con plan
-        if (waitlistData) {
-          waitlistData.plan = planSelected || waitlistData.plan || "personal";
-          setStoredJson(STORAGE_WAITLIST_KEY, waitlistData);
+        const wl = getStoredJson(STORAGE_WAITLIST_KEY);
+        if (wl) {
+          wl.plan = planSelected || wl.plan || "personal";
+          setStoredJson(STORAGE_WAITLIST_KEY, wl);
         }
 
         window.location.href = "./app.html";
@@ -437,25 +376,27 @@ if (page === "login") {
 }
 
 // ===================
-// APP / PANEL
+// APP / PANEL (IA REAL)
 // ===================
 if (page === "app") {
-  let auth = getStoredJson(STORAGE_AUTH_KEY);
+  const auth = getStoredJson(STORAGE_AUTH_KEY);
 
-  if (!auth || !auth.token || !auth.user || !auth.user.email) {
+  // Si no tienes auth real aún, puedes comentar esto temporalmente:
+  if (!auth || !auth.user || !auth.user.email) {
     window.location.href = "./login.html";
   } else {
     const currentUser = auth.user;
-    let materials = []; // cache local en memoria
 
     const logoutBtn = document.getElementById("logout-btn");
     const appUserEmail = document.getElementById("app-user-email");
     const appUserPlan = document.getElementById("app-user-plan");
+
     const accountName = document.getElementById("account-name");
     const accountEmail = document.getElementById("account-email");
     const accountRole = document.getElementById("account-role");
     const accountCenter = document.getElementById("account-center");
     const accountPlan = document.getElementById("account-plan");
+
     const navLinks = document.querySelectorAll(".app-nav-link");
     const sections = {
       create: document.getElementById("section-create"),
@@ -477,21 +418,20 @@ if (page === "app") {
     const materialError = document.getElementById("material-error");
     const materialSuccess = document.getElementById("material-success");
 
-    const generatedOutputEl = document.getElementById("generated-output");
-    const copyOutputBtn = document.getElementById("copy-output-btn");
-    const downloadOutputBtn = document.getElementById("download-output-btn");
+    const generateBtn = document.getElementById("generate-btn");
+    const generatedOutput = document.getElementById("generated-output");
+    const generatedMeta = document.getElementById("generated-meta");
+    const copyBtn = document.getElementById("copy-output-btn");
+    const clearBtn = document.getElementById("clear-output-btn");
+    const copySuccess = document.getElementById("copy-success");
 
     const historyEmpty = document.getElementById("history-empty");
     const historyList = document.getElementById("history-list");
     const historyBody = document.getElementById("history-body");
 
-    // Rellenar info de usuario/cuenta
+    // UI user
     if (appUserEmail) appUserEmail.textContent = currentUser.email || "";
-    const planMap = {
-      personal: "Plan Personal",
-      pro: "Plan Pro",
-      academia: "Plan Academia"
-    };
+    const planMap = { personal: "Plan Personal", pro: "Plan Pro", academia: "Plan Academia" };
     const planLabel = planMap[currentUser.plan] || "Plan Personal";
     if (appUserPlan) appUserPlan.textContent = planLabel;
 
@@ -501,7 +441,7 @@ if (page === "app") {
     if (accountCenter) accountCenter.textContent = currentUser.center || "—";
     if (accountPlan) accountPlan.textContent = planLabel;
 
-    // Créditos por plan
+    // Credits
     function getTotalCreditsForPlan(plan) {
       switch (plan) {
         case "pro":
@@ -514,7 +454,8 @@ if (page === "app") {
       }
     }
 
-    // ---- Gestión de materiales (cache + API + localStorage) ----
+    let materials = [];
+
     function loadMaterialsFromStorage() {
       const arr = getStoredJson(STORAGE_MATERIALS_KEY);
       materials = Array.isArray(arr) ? arr : [];
@@ -559,12 +500,7 @@ if (page === "app") {
             tdTitle.textContent = item.title || "—";
 
             const tdType = document.createElement("td");
-            const typeMap = {
-              test: "Test",
-              resumen: "Resumen",
-              guia: "Guía",
-              presentacion: "Presentación"
-            };
+            const typeMap = { test: "Test", resumen: "Resumen", guia: "Guía", presentacion: "Presentación" };
             tdType.textContent = typeMap[item.type] || item.type || "—";
 
             const tdDate = document.createElement("td");
@@ -585,50 +521,6 @@ if (page === "app") {
 
             historyBody.appendChild(tr);
           });
-      }
-    }
-
-    async function syncMaterialsFromApi() {
-      if (!API_BASE_URL || !auth.token) return;
-
-      try {
-        const res = await fetch(`${API_BASE_URL}/materials`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${auth.token}`
-          }
-        });
-
-        if (!res.ok) {
-          console.warn("No se pudieron cargar materiales desde API.");
-          return;
-        }
-
-        const data = await res.json().catch(() => []);
-        const remote = Array.isArray(data)
-          ? data
-          : Array.isArray(data.materials)
-          ? data.materials
-          : [];
-
-        if (remote.length) {
-          materials = remote.map((m) => ({
-            id: m.id || m._id || Date.now(),
-            title: m.title,
-            type: m.type,
-            sourceLength: m.sourceLength || 0,
-            questions: m.questions || 0,
-            createdAt: m.createdAt || new Date().toISOString(),
-            credits: m.estimatedCredits || m.credits || 0,
-            status: m.status || "Generado",
-            outputText: m.outputText || ""
-          }));
-          saveMaterialsToStorage();
-          renderHistory();
-          updateCreditsUI();
-        }
-      } catch (err) {
-        console.error("Error sincronizando materiales desde API:", err);
       }
     }
 
@@ -659,48 +551,58 @@ if (page === "app") {
     function clearMaterialMessages() {
       if (materialError) materialError.textContent = "";
       if (materialSuccess) materialSuccess.textContent = "";
+      if (copySuccess) copySuccess.textContent = "";
     }
 
-    async function generateViaApi({ type, inputText, questions, difficulty }) {
+    function setLoading(isLoading) {
+      if (!generateBtn) return;
+      generateBtn.disabled = isLoading;
+      generateBtn.textContent = isLoading ? "Generando..." : "Generar con IA";
+    }
+
+    function mapTypeForGenerate(type) {
+      // Nuestro backend admite: test | resumen | guia
+      // Presentación en demo -> guía (estructura + guion)
+      if (type === "presentacion") return "guia";
+      return type;
+    }
+
+    async function callGenerateApi({ type, inputText, questions, difficulty }) {
       const res = await fetch(`${API_BASE_URL}/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type,
-          inputText,
-          questions,
-          difficulty
-        })
+        body: JSON.stringify({ type, inputText, questions, difficulty })
       });
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "No se pudo generar el material.");
+        const msg = data.error || "Error generando contenido.";
+        throw new Error(msg);
       }
 
       return res.json();
     }
 
-    // Copiar / Descargar
-    if (copyOutputBtn) {
-      copyOutputBtn.addEventListener("click", async () => {
-        const text = generatedOutputEl ? generatedOutputEl.textContent : "";
-        if (!text) return;
+    if (copyBtn && generatedOutput) {
+      copyBtn.addEventListener("click", async () => {
+        clearMaterialMessages();
+        const text = generatedOutput.value || "";
+        if (!text.trim()) return;
+
         try {
           await navigator.clipboard.writeText(text);
-          if (materialSuccess) materialSuccess.textContent = "Copiado al portapapeles.";
-        } catch (_) {
-          if (materialError) materialError.textContent = "No se pudo copiar (permiso del navegador).";
+          if (copySuccess) copySuccess.textContent = "Copiado al portapapeles ✅";
+        } catch {
+          if (copySuccess) copySuccess.textContent = "No se pudo copiar. Selecciona el texto y copia manualmente.";
         }
       });
     }
 
-    if (downloadOutputBtn) {
-      downloadOutputBtn.addEventListener("click", () => {
-        const text = generatedOutputEl ? generatedOutputEl.textContent : "";
-        if (!text) return;
-        const ts = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
-        downloadTextFile(`formatexp-${ts}.txt`, text);
+    if (clearBtn && generatedOutput) {
+      clearBtn.addEventListener("click", () => {
+        clearMaterialMessages();
+        generatedOutput.value = "";
+        if (generatedMeta) generatedMeta.textContent = "";
       });
     }
 
@@ -709,22 +611,19 @@ if (page === "app") {
         event.preventDefault();
         clearMaterialMessages();
 
-        const title = safeText(materialTitleInput?.value);
-        const rawType = safeText(materialTypeSelect?.value) || "test";
-        const difficulty = safeText(materialDifficultySelect?.value) || "medio";
-        const source = safeText(materialSourceTextarea?.value);
-        const questions = materialQuestionsInput
-          ? Number(materialQuestionsInput.value || "10")
-          : 10;
+        const title = materialTitleInput ? materialTitleInput.value.trim() : "";
+        const uiType = materialTypeSelect ? materialTypeSelect.value : "test";
+        const type = mapTypeForGenerate(uiType);
+        const source = materialSourceTextarea ? materialSourceTextarea.value.trim() : "";
+        const difficulty = materialDifficultySelect ? materialDifficultySelect.value : "medio";
+        const questionsRaw = materialQuestionsInput ? Number(materialQuestionsInput.value || "0") : 0;
+        const questions = Number.isFinite(questionsRaw) ? questionsRaw : 0;
 
         if (!title) {
-          if (materialError) materialError.textContent = "Pon un título al material para poder guardarlo.";
+          if (materialError) materialError.textContent = "Pon un título al material.";
           materialTitleInput?.focus();
           return;
         }
-
-        // MVP: de momento solo generamos estos 3 en OpenAI (presentación luego)
-        const type = ["test", "resumen", "guia"].includes(rawType) ? rawType : "guia";
 
         if (!source || source.length < 50) {
           if (materialError) materialError.textContent = "Pega un texto un poco más largo (mínimo ~50 caracteres).";
@@ -732,110 +631,68 @@ if (page === "app") {
           return;
         }
 
-        const estimate = estimateCredits(rawType);
+        const estimate = estimateCredits(uiType);
         const total = getTotalCreditsForPlan(currentUser.plan);
         const used = getUsedCredits();
         const remaining = Math.max(total - used, 0);
 
         if (estimate > remaining) {
-          if (materialError) materialError.textContent =
-            "No tienes suficientes créditos para esta generación. (Luego añadiremos compra de créditos).";
+          if (materialError) materialError.textContent = "No tienes suficientes créditos para esta generación.";
           return;
         }
 
-        // UI loading
-        const submitBtn = materialForm.querySelector('button[type="submit"]');
-        const prevBtnText = submitBtn ? submitBtn.textContent : "Generar material";
-        if (submitBtn) submitBtn.disabled = true;
-        if (submitBtn) submitBtn.textContent = "Generando…";
-        if (generatedOutputEl) generatedOutputEl.textContent = "Generando contenido con IA…";
-
         try {
-          // 1) Generar con OpenAI vía API
-          const result = await generateViaApi({
+          setLoading(true);
+
+          // Llamada REAL a IA
+          const data = await callGenerateApi({
             type,
             inputText: source,
-            questions: Number.isFinite(questions) ? questions : 10,
+            questions: uiType === "test" ? Math.max(3, Math.min(25, questions || 10)) : undefined,
             difficulty
           });
 
-          const outputText = safeText(result.outputText);
+          const outputText = data.outputText || "";
 
-          // 2) Pintar output
-          if (generatedOutputEl) generatedOutputEl.textContent = outputText || "(Sin contenido devuelto)";
+          // Mostrar resultado
+          if (generatedOutput) generatedOutput.value = outputText;
+          if (generatedMeta) {
+            const now = new Date();
+            generatedMeta.textContent = `Generado: ${now.toLocaleString()} · Tipo: ${uiType} · Dificultad: ${difficulty}`;
+          }
 
-          // 3) Guardar item local
+          // Guardar en historial local
           const newItem = {
             id: Date.now(),
             title,
-            type: rawType, // guardamos lo que el user eligió
-            difficulty,
+            type: uiType,
             sourceLength: source.length,
-            questions: isNaN(questions) ? 0 : questions,
+            questions: uiType === "test" ? (questions || 10) : 0,
             createdAt: new Date().toISOString(),
             credits: estimate,
-            status: "Generado (IA)",
+            status: "Generado",
             outputText
           };
-
-          // 4) Intentar guardar también en API /materials (si tu backend lo soporta)
-          try {
-            if (API_BASE_URL && auth.token) {
-              const res = await fetch(`${API_BASE_URL}/materials`, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${auth.token}`
-                },
-                body: JSON.stringify({
-                  title,
-                  type: rawType,
-                  difficulty,
-                  source,
-                  questions: isNaN(questions) ? 0 : questions,
-                  estimatedCredits: estimate,
-                  status: "Generado (IA)",
-                  outputText
-                })
-              });
-
-              if (res.ok) {
-                const data = await res.json().catch(() => ({}));
-                const m = data.material || data;
-                if (m) {
-                  newItem.id = m.id || m._id || newItem.id;
-                }
-              } else {
-                console.warn("No se pudo guardar el material en la API.");
-              }
-            }
-          } catch (err) {
-            console.error("Error guardando material en API:", err);
-          }
 
           materials.push(newItem);
           saveMaterialsToStorage();
           renderHistory();
           updateCreditsUI();
 
-          if (materialSuccess) materialSuccess.textContent =
-            "Listo: material generado con IA y guardado en tu historial.";
+          if (materialSuccess) materialSuccess.textContent = "¡Listo! Material generado y guardado en el historial ✅";
 
-          // Opcional: no reseteamos el texto pegado para que el profesor pueda retocar
-          // materialForm.reset();
-
+          // No reseteamos todo: suele ser útil mantener el texto pegado.
+          // Si prefieres reset total, dímelo.
         } catch (err) {
           console.error(err);
-          if (generatedOutputEl) generatedOutputEl.textContent = "";
-          if (materialError) materialError.textContent = err.message || "No se pudo generar el material.";
+          if (materialError) materialError.textContent = err.message || "Error generando contenido.";
         } finally {
-          if (submitBtn) submitBtn.disabled = false;
-          if (submitBtn) submitBtn.textContent = prevBtnText;
+          setLoading(false);
         }
       });
     }
 
-    // Navegación con hash (#/create, #/history, etc.)
+    // Navegación hash
     function showSection(key) {
       Object.keys(sections).forEach((k) => {
         const section = sections[k];
@@ -863,8 +720,7 @@ if (page === "app") {
     }
 
     function initSectionFromHash() {
-      const key = getKeyFromHash();
-      showSection(key);
+      showSection(getKeyFromHash());
     }
 
     navLinks.forEach((link) => {
@@ -877,9 +733,7 @@ if (page === "app") {
 
     window.addEventListener("hashchange", initSectionFromHash);
 
-    // Enlace "crear" desde historial vacío
-    const goCreateLinks = document.querySelectorAll('[data-go="create"]');
-    goCreateLinks.forEach((link) => {
+    document.querySelectorAll('[data-go="create"]').forEach((link) => {
       link.addEventListener("click", (event) => {
         event.preventDefault();
         showSection("create");
@@ -896,21 +750,10 @@ if (page === "app") {
       });
     }
 
-    // Inicializar panel
-    function initPanel() {
-      loadMaterialsFromStorage();
-      renderHistory();
-      updateCreditsUI();
-      initSectionFromHash();
-      syncMaterialsFromApi();
-
-      // Estado inicial output
-      if (generatedOutputEl && !generatedOutputEl.textContent) {
-        generatedOutputEl.textContent =
-          "Genera un material para ver el resultado aquí.";
-      }
-    }
-
-    initPanel();
+    // Init
+    loadMaterialsFromStorage();
+    renderHistory();
+    updateCreditsUI();
+    initSectionFromHash();
   }
 }

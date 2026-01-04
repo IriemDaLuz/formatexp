@@ -1,14 +1,14 @@
+// server/src/services/openai.js
 import OpenAI from "openai";
 
-const apiKey = process.env.OPENAI_API_KEY;
+export const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
 
-if (!apiKey) {
-  console.warn(" OPENAI_API_KEY no está definida");
+export function getOpenAIClient() {
+  const apiKey = process.env.OPENAI_API_KEY;
+
+  if (!apiKey) {
+    return null; // No reventamos el servidor
+  }
+
+  return new OpenAI({ apiKey });
 }
-
-export const openai = new OpenAI({
-  apiKey
-});
-
-export const OPENAI_MODEL =
-  process.env.OPENAI_MODEL || "gpt-4o-mini";
