@@ -1,3 +1,4 @@
+<!-- /index.html -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -82,77 +83,91 @@
               <input id="website" name="website" type="text" tabindex="-1" autocomplete="off" />
             </div>
 
-            <div class="field-group">
-              <label for="name">Nombre y apellidos</label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                required
-                placeholder="Ana García López"
-                autocomplete="name"
-              />
-            </div>
+            <!-- Mejora UX: microcopy de confianza + expectativa de tiempo (reduce fricción) -->
+            <p class="form-trust" id="waitlist-trust">⏱️ 1 minuto • Sin tarjeta • Cancelar cuando quieras</p>
 
-            <div class="field-group">
-              <label for="email">Correo electrónico profesional</label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autocomplete="email"
-                required
-                placeholder="tuemail@centroeducativo.com"
-              />
-            </div>
-
-            <div class="field-group">
-              <label for="role">Tu perfil</label>
-              <select id="role" name="role" required>
-                <option value="">Selecciona una opción</option>
-                <option value="maestro">Maestro / Maestra</option>
-                <option value="secundaria">Profesor/a de secundaria</option>
-                <option value="universidad">Profesor/a universitario/a</option>
-                <option value="formador">Formador/a independiente</option>
-                <option value="academia">Academia / Centro educativo</option>
-                <option value="otros">Otro perfil docente</option>
-              </select>
-            </div>
-
-            <div class="field-group">
-              <label for="center">Centro / Academia (opcional)</label>
-              <input
-                id="center"
-                name="center"
-                type="text"
-                placeholder="IES, universidad, academia u organización"
-                autocomplete="organization"
-              />
-            </div>
-
-            <fieldset class="field-group fieldset-group">
-              <legend>Plan que más te encaja ahora mismo</legend>
-              <div class="radio-group">
-                <label class="radio-option">
-                  <input type="radio" name="plan" value="personal" checked />
-                  <span>
-                    <strong>Personal</strong> — Profesor individual
-                  </span>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="plan" value="pro" />
-                  <span>
-                    <strong>Pro</strong> — Volumen alto de material
-                  </span>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="plan" value="academia" />
-                  <span>
-                    <strong>Academia</strong> — Varios profesores
-                  </span>
-                </label>
+            <!-- Mejora UI: grid para reducir altura del hero y mejorar escaneo -->
+            <div class="form-grid">
+              <div class="field-group">
+                <label for="name">Nombre y apellidos</label>
+                <input
+                  id="name"
+                  name="name"
+                  type="text"
+                  required
+                  placeholder="Ana García López"
+                  autocomplete="name"
+                />
               </div>
-            </fieldset>
+
+              <div class="field-group">
+                <label for="email">Correo electrónico profesional</label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autocomplete="email"
+                  required
+                  placeholder="tuemail@centroeducativo.com"
+                />
+              </div>
+
+              <div class="field-group">
+                <label for="role">Tu perfil</label>
+                <select id="role" name="role" required>
+                  <option value="">Selecciona una opción</option>
+                  <option value="maestro">Maestro / Maestra</option>
+                  <option value="secundaria">Profesor/a de secundaria</option>
+                  <option value="universidad">Profesor/a universitario/a</option>
+                  <option value="formador">Formador/a independiente</option>
+                  <option value="academia">Academia / Centro educativo</option>
+                  <option value="otros">Otro perfil docente</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Mejora UX: agrupamos campos secundarios en un bloque desplegable para reducir fricción en el hero -->
+            <details class="form-details">
+              <summary class="form-details-summary">
+                Preferencias (opcional): centro y plan
+                <span class="form-details-hint">Ayúdanos a priorizar tu invitación</span>
+              </summary>
+
+              <div class="field-group">
+                <label for="center">Centro / Academia (opcional)</label>
+                <input
+                  id="center"
+                  name="center"
+                  type="text"
+                  placeholder="IES, universidad, academia u organización"
+                  autocomplete="organization"
+                />
+              </div>
+
+              <fieldset class="field-group fieldset-group">
+                <legend>Plan que más te encaja ahora mismo</legend>
+                <div class="radio-group">
+                  <label class="radio-option">
+                    <input type="radio" name="plan" value="personal" checked />
+                    <span>
+                      <strong>Personal</strong> — Profesor individual
+                    </span>
+                  </label>
+                  <label class="radio-option">
+                    <input type="radio" name="plan" value="pro" />
+                    <span>
+                      <strong>Pro</strong> — Volumen alto de material
+                    </span>
+                  </label>
+                  <label class="radio-option">
+                    <input type="radio" name="plan" value="academia" />
+                    <span>
+                      <strong>Academia</strong> — Varios profesores
+                    </span>
+                  </label>
+                </div>
+              </fieldset>
+            </details>
 
             <div class="field-group field-consent">
               <label class="checkbox-option">
@@ -179,8 +194,8 @@
           </form>
 
           <ul class="hero-bullets" aria-label="Beneficios clave de FormatExp">
-            <li> Exportaciones profesionales en PDF, Word y próximamente SCORM.</li>
-            <li> Control de costes con créditos de IA escalables.</li>
+            <li>Exportaciones profesionales en PDF, Word y próximamente SCORM.</li>
+            <li>Control de costes con créditos de IA escalables.</li>
           </ul>
         </div>
 
@@ -316,27 +331,31 @@
       <div class="container time-grid">
         <div>
           <header class="section-header">
-            <h2>Ahorra entre 5 y 10 horas por semana</h2>
-            <p>
-              Cada profesor invierte horas preparando material. FormatExp automatiza las tareas
-              más repetitivas para que puedas centrarte en enseñar.
+            <!-- Mejora UI: hacemos el dato (5–10 h) dominante para impacto visual inmediato -->
+            <p class="time-eyebrow">Ahorro de tiempo realista</p>
+            <h2>
+              <span class="time-stat" aria-label="Ahorra entre cinco y diez horas por semana">5–10 h</span>
+              <span class="time-stat-label">ahorradas cada semana</span>
+            </h2>
+            <p class="time-subtitle">
+              Automatiza las tareas repetitivas (tests, resúmenes, guías y presentaciones) y dedica ese tiempo a enseñar.
             </p>
           </header>
 
-          <ul class="time-list">
-            <li><strong>Generación de tests:</strong> ahorra 1–2 horas por examen.</li>
-            <li><strong>Resúmenes y guías:</strong> ahorra ~1 hora por tema.</li>
-            <li><strong>Presentaciones IA:</strong> ahorra 2–3 horas por unidad didáctica.</li>
-            <li><strong>Bancos de preguntas:</strong> ahorra hasta 6 horas de trabajo manual.</li>
+          <ul class="time-list" aria-label="Ejemplos de ahorro por tipo de material">
+            <li><strong>Tests:</strong> 1–2 h menos por examen.</li>
+            <li><strong>Resúmenes y guías:</strong> ~1 h menos por tema.</li>
+            <li><strong>Presentaciones:</strong> 2–3 h menos por unidad didáctica.</li>
+            <li><strong>Bancos de preguntas:</strong> hasta 6 h de trabajo manual evitadas.</li>
           </ul>
 
           <p class="time-highlight">
-            Con solo 2–3 asignaturas, el ahorro semanal de tiempo justifica de sobra el coste del Plan Personal.
+            Con 2–3 asignaturas, el ahorro semanal suele justificar el coste del Plan Personal.
           </p>
         </div>
 
         <aside class="card time-card" aria-label="Ejemplo de cálculo del tiempo ahorrado">
-          <h3>Cálculo rápido</h3>
+          <h3>Cálculo rápido (orientativo)</h3>
           <dl class="time-dl">
             <div>
               <dt>Tests mensuales</dt>
@@ -359,6 +378,41 @@
       </div>
     </section>
 
+    <!-- TESTIMONIALS -->
+    <section id="testimonials" class="section testimonials">
+      <div class="container">
+        <header class="section-header">
+          <h2>Lo que ya están diciendo los primeros profesores</h2>
+          <p>Testimonios de ejemplo para ilustrar el impacto esperado (en beta recogeremos reseñas reales).</p>
+        </header>
+
+        <div class="testimonial-grid">
+          <article class="card testimonial-card">
+            <p class="testimonial-text">
+              “Antes tardaba tardes enteras en preparar exámenes y guías.  
+              Con FormatExp genero la base en minutos y solo ajusto el contenido.”
+            </p>
+            <p class="testimonial-author"><span class="testimonial-name">Ana</span><span class="testimonial-role">Profesora de secundaria</span></p>
+          </article>
+
+          <article class="card testimonial-card">
+            <p class="testimonial-text">
+              “Para mi academia de oposiciones es clave tener bancos de preguntas.  
+              El modelo de créditos nos permite controlar costes sin renunciar a la IA.”
+            </p>
+            <p class="testimonial-author"><span class="testimonial-name">Javier</span><span class="testimonial-role">Director de academia</span></p>
+          </article>
+
+          <article class="card testimonial-card">
+            <p class="testimonial-text">
+              “Lo que más valoro es poder exportar materiales ya listos para clase y adaptados a mis propios temarios.”
+            </p>
+            <p class="testimonial-author"><span class="testimonial-name">Lucía</span><span class="testimonial-role">Profesora universitaria</span></p>
+          </article>
+        </div>
+      </div>
+    </section>
+
     <!-- PRICING -->
     <section id="pricing" class="section pricing">
       <div class="container">
@@ -373,6 +427,7 @@
           <article class="card pricing-card" role="listitem">
             <p class="pricing-badge">Plan Personal</p>
             <h3>Para un profesor</h3>
+            <p class="pricing-who">Ideal si preparas material cada semana y quieres empezar sin complicarte.</p>
             <p class="pricing-price">
               12 € <span class="pricing-period">/ mes</span>
             </p>
@@ -387,11 +442,14 @@
             <button class="btn btn-outline" type="button" data-plan="personal">
               Unirme a la beta Personal
             </button>
+            <p class="pricing-micro">Sin tarjeta durante la beta • Cancela cuando quieras</p>
           </article>
 
           <article class="card pricing-card pricing-card-highlight" role="listitem">
+            <p class="pricing-recommended" aria-label="Plan recomendado">Recomendado</p>
             <p class="pricing-badge">Plan Pro</p>
             <h3>Formadores intensivos</h3>
+            <p class="pricing-who">Ideal si generas mucho material, varios cursos o necesitas presentaciones.</p>
             <p class="pricing-price">
               29 € <span class="pricing-period">/ mes</span>
             </p>
@@ -407,11 +465,13 @@
             <button class="btn btn-primary" type="button" data-plan="pro">
               Unirme a la beta Pro
             </button>
+            <p class="pricing-micro">Acceso prioritario al generador de presentaciones</p>
           </article>
 
           <article class="card pricing-card" role="listitem">
             <p class="pricing-badge">Plan Academia</p>
             <h3>Centros e instituciones</h3>
+            <p class="pricing-who">Ideal para equipos docentes: control, cuentas y analítica centralizada.</p>
             <p class="pricing-price">
               Desde 99 € <span class="pricing-period">/ mes</span>
             </p>
@@ -427,6 +487,7 @@
             <button class="btn btn-outline" type="button" data-plan="academia">
               Solicitar demo para Academia
             </button>
+            <p class="pricing-micro">Demo + propuesta a medida • Soporte prioritario</p>
           </article>
         </div>
 
@@ -436,6 +497,20 @@
             <p>
               Flexibilidad total: compra créditos extra cuando los necesites.  
               Ideal para épocas de exámenes o preparación de oposiciones.
+            </p>
+          </div>
+
+          <!-- Mejora UX: hacemos tangible el concepto de créditos con ejemplos de consumo -->
+          <div class="credits-explain" aria-label="Qué consumen los créditos de IA">
+            <p class="credits-explain-title"><strong>¿Qué consume créditos?</strong></p>
+            <ul class="credits-explain-list">
+              <li><strong>Test / examen:</strong> ~5 créditos (según nº de preguntas).</li>
+              <li><strong>Resumen:</strong> ~3 créditos.</li>
+              <li><strong>Guía de estudio:</strong> ~4 créditos.</li>
+              <li><strong>Presentación:</strong> ~8 créditos.</li>
+            </ul>
+            <p class="credits-explain-note">
+              El consumo real se ajustará por longitud del documento y formato de exportación. Así sabes siempre “qué estás comprando”.
             </p>
           </div>
 
@@ -465,41 +540,6 @@
       </div>
     </section>
 
-    <!-- TESTIMONIALS -->
-    <section id="testimonials" class="section testimonials">
-      <div class="container">
-        <header class="section-header">
-          <h2>Lo que ya están diciendo los primeros profesores</h2>
-          <p>Testimonios ficticios basados en el tipo de impacto que buscamos validar.</p>
-        </header>
-
-        <div class="testimonial-grid">
-          <article class="card testimonial-card">
-            <p class="testimonial-text">
-              “Antes tardaba tardes enteras en preparar exámenes y guías.  
-              Con FormatExp genero la base en minutos y solo ajusto el contenido.”
-            </p>
-            <p class="testimonial-author">Ana, Profesora de secundaria</p>
-          </article>
-
-          <article class="card testimonial-card">
-            <p class="testimonial-text">
-              “Para mi academia de oposiciones es clave tener bancos de preguntas.  
-              El modelo de créditos nos permite controlar costes sin renunciar a la IA.”
-            </p>
-            <p class="testimonial-author">Javier, Director de academia</p>
-          </article>
-
-          <article class="card testimonial-card">
-            <p class="testimonial-text">
-              “Lo que más valoro es poder exportar materiales ya listos para clase y adaptados a mis propios temarios.”
-            </p>
-            <p class="testimonial-author">Lucía, Profesora universitaria</p>
-          </article>
-        </div>
-      </div>
-    </section>
-
     <!-- FAQ -->
     <section id="faq" class="section faq">
       <div class="container">
@@ -509,10 +549,50 @@
         </header>
 
         <div class="faq-list" role="list">
+          <!-- Mejora UX: ordenadas por fricción (precio/tarjeta/créditos/alcance). Primera abierta por defecto. -->
+          <article class="faq-item card" role="listitem">
+            <button class="faq-question" type="button" aria-expanded="true">
+              <span>¿Cuánto cuesta? ¿Hay fase gratuita?</span>
+              <span class="faq-icon" aria-hidden="true"></span>
+            </button>
+            <div class="faq-answer">
+              <p>
+                Durante la beta inicial, el acceso será gratuito para un grupo reducido de profesores a cambio de feedback.
+                Más adelante se activará el paywall según el plan que elijas.
+              </p>
+            </div>
+          </article>
+
+          <article class="faq-item card" role="listitem">
+            <button class="faq-question" type="button" aria-expanded="false">
+              <span>¿Necesito tarjeta para probar el MVP?</span>
+              <span class="faq-icon" aria-hidden="true"></span>
+            </button>
+            <div class="faq-answer" hidden>
+              <p>
+                No. Para entrar en la lista de espera y acceder a la beta no pedimos tarjeta.
+                Cuando estén disponibles los planes de pago, podrás elegir y cancelar cuando quieras.
+              </p>
+            </div>
+          </article>
+
+          <article class="faq-item card" role="listitem">
+            <button class="faq-question" type="button" aria-expanded="false">
+              <span>¿Cómo funcionan los créditos de IA?</span>
+              <span class="faq-icon" aria-hidden="true"></span>
+            </button>
+            <div class="faq-answer" hidden>
+              <p>
+                Cada generación consume una pequeña cantidad de créditos según el tipo de material (tests, resúmenes,
+                presentaciones, bancos grandes, etc.). Así controlamos los costes y mantenemos precios justos.
+              </p>
+            </div>
+          </article>
+
           <article class="faq-item card" role="listitem">
             <button class="faq-question" type="button" aria-expanded="false">
               <span>¿Para quién está pensado FormatExp?</span>
-              <span aria-hidden="true">+</span>
+              <span class="faq-icon" aria-hidden="true"></span>
             </button>
             <div class="faq-answer" hidden>
               <p>
@@ -525,38 +605,12 @@
           <article class="faq-item card" role="listitem">
             <button class="faq-question" type="button" aria-expanded="false">
               <span>¿Los alumnos pueden usar la plataforma?</span>
-              <span aria-hidden="true">+</span>
+              <span class="faq-icon" aria-hidden="true"></span>
             </button>
             <div class="faq-answer" hidden>
               <p>
-                No. FormatExp está diseñado exclusivamente para docentes y centros educativos. 
+                No. FormatExp está diseñado exclusivamente para docentes y centros educativos.
                 El foco está en ayudarte a preparar y corregir material, no en ofrecer un portal para alumnos.
-              </p>
-            </div>
-          </article>
-
-          <article class="faq-item card" role="listitem">
-            <button class="faq-question" type="button" aria-expanded="false">
-              <span>¿Cómo funcionan los créditos de IA?</span>
-              <span aria-hidden="true">+</span>
-            </button>
-            <div class="faq-answer" hidden>
-              <p>
-                Cada generación consume una pequeña cantidad de créditos según el tipo de material (tests, resúmenes,
-                presentaciones, bancos grandes, etc.). Así controlamos los costes y mantenemos precios justos.
-              </p>
-            </div>
-          </article>
-
-          <article class="faq-item card" role="listitem">
-            <button class="faq-question" type="button" aria-expanded="false">
-              <span>¿Necesito tarjeta para probar el MVP?</span>
-              <span aria-hidden="true">+</span>
-            </button>
-            <div class="faq-answer" hidden>
-              <p>
-                Durante la fase de beta inicial, el acceso será gratuito para un grupo reducido de profesores a cambio
-                de feedback. Más adelante se activará el paywall según el plan que elijas.
               </p>
             </div>
           </article>

@@ -4,10 +4,12 @@ const STORAGE_AUTH_KEY = "formatexp_auth";
 const STORAGE_MATERIALS_KEY = "formatexp_materials";
 
 // URL base de la API (local vs producción)
+// ✅ En producción debe incluir /api
 const API_BASE_URL =
   window.location.hostname === "localhost"
     ? "http://localhost:4000/api"
-    : "https://formatexp.onrender.com"; 
+    : "https://formatexp.onrender.com/api";
+
 // Endpoint opcional para lista de espera (Formspree)
 const WAITLIST_ENDPOINT = "https://formspree.io/f/mnnwazvr";
 
@@ -59,6 +61,22 @@ function setStoredJson(key, value) {
   } catch (_) {
     // ignorar
   }
+}
+
+function safeText(value) {
+  return String(value || "").trim();
+}
+
+function downloadTextFile(filename, text) {
+  const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 // ===================
@@ -158,7 +176,7 @@ if (page === "landing") {
         date: new Date().toISOString()
       };
 
-      // 1) Guardar en localStorage (para login y app simulados)
+      // 1) Guardar en localStorage
       setStoredJson(STORAGE_WAITLIST_KEY, payload);
 
       // 2) Enviar a tu API real (MongoDB Atlas)
@@ -177,10 +195,9 @@ if (page === "landing") {
         }
       } catch (err) {
         console.error("Error enviando a API /waitlist:", err);
-        // No rompemos la UX si la API falla
       }
 
-      // 3) Enviar a Formspree (para notificación/copia)
+      // 3) Enviar a Formspree (notificación/copia)
       if (WAITLIST_ENDPOINT) {
         try {
           const response = await fetch(WAITLIST_ENDPOINT, {
@@ -212,7 +229,7 @@ if (page === "landing") {
         }
       }
 
-      // 4) Mensaje de éxito al usuario
+      // 4) Mensaje de éxito
       formSuccess.textContent =
         "¡Gracias! Te hemos añadido a la lista de espera de FormatExp.";
       form.reset();
@@ -315,9 +332,7 @@ if (page === "login") {
   async function loginViaApi(email, password) {
     const res = await fetch(`${API_BASE_URL}/auth/login`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password })
     });
 
@@ -336,10 +351,7 @@ if (page === "login") {
     const waitlist = getStoredJson(STORAGE_WAITLIST_KEY) || {};
 
     const body = {
-      name:
-        waitlist.name ||
-        email.split("@")[0] ||
-        "Profesor FormatExp",
+      name: waitlist.name || email.split("@")[0] || "Profesor FormatExp",
       email,
       password,
       role: waitlist.role || "otros",
@@ -349,9 +361,7 @@ if (page === "login") {
 
     const res = await fetch(`${API_BASE_URL}/auth/register`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
     });
 
@@ -372,28 +382,24 @@ if (page === "login") {
       if (loginError) loginError.textContent = "";
 
       const emailValue = loginEmailInput ? loginEmailInput.value.trim() : "";
-      const passwordValue = loginPasswordInput
-        ? loginPasswordInput.value
-        : "";
+      const passwordValue = loginPasswordInput ? loginPasswordInput.value : "";
       const planSelected = loginPlanSelect ? loginPlanSelect.value : "";
 
       if (!emailValue) {
         showLoginError("Introduce tu correo electrónico.");
-        if (loginEmailInput) loginEmailInput.focus();
+        loginEmailInput?.focus();
         return;
       }
 
       if (!isValidEmail(emailValue)) {
         showLoginError("El formato del correo no parece válido.");
-        if (loginEmailInput) loginEmailInput.focus();
+        loginEmailInput?.focus();
         return;
       }
 
       if (!passwordValue || passwordValue.length < 6) {
-        showLoginError(
-          "Introduce una contraseña de al menos 6 caracteres."
-        );
-        if (loginPasswordInput) loginPasswordInput.focus();
+        showLoginError("Introduce una contraseña de al menos 6 caracteres.");
+        loginPasswordInput?.focus();
         return;
       }
 
@@ -404,30 +410,20 @@ if (page === "login") {
         try {
           data = await loginViaApi(emailValue, passwordValue);
         } catch (err) {
-          // Si es 401/404, intentamos registro automático (primer acceso)
+          // 401/404 -> registro automático primer acceso
           if (err.status === 401 || err.status === 404) {
-            data = await registerViaApi(
-              emailValue,
-              passwordValue,
-              planSelected
-            );
+            data = await registerViaApi(emailValue, passwordValue, planSelected);
           } else {
             throw err;
           }
         }
 
-        // data: { token, user }
-        const authData = {
-          token: data.token,
-          user: data.user
-        };
-
+        const authData = { token: data.token, user: data.user };
         setStoredJson(STORAGE_AUTH_KEY, authData);
 
-        // también actualizamos waitlist local con plan, por coherencia
+        // actualizar waitlist local con plan
         if (waitlistData) {
-          waitlistData.plan =
-            planSelected || waitlistData.plan || "personal";
+          waitlistData.plan = planSelected || waitlistData.plan || "personal";
           setStoredJson(STORAGE_WAITLIST_KEY, waitlistData);
         }
 
@@ -474,11 +470,16 @@ if (page === "app") {
     const materialForm = document.getElementById("material-form");
     const materialTitleInput = document.getElementById("material-title");
     const materialTypeSelect = document.getElementById("material-type");
+    const materialDifficultySelect = document.getElementById("material-difficulty");
     const materialSourceTextarea = document.getElementById("material-source");
     const materialQuestionsInput = document.getElementById("material-questions");
     const creditsEstimateSpan = document.getElementById("credits-estimate");
     const materialError = document.getElementById("material-error");
     const materialSuccess = document.getElementById("material-success");
+
+    const generatedOutputEl = document.getElementById("generated-output");
+    const copyOutputBtn = document.getElementById("copy-output-btn");
+    const downloadOutputBtn = document.getElementById("download-output-btn");
 
     const historyEmpty = document.getElementById("history-empty");
     const historyList = document.getElementById("history-list");
@@ -533,8 +534,7 @@ if (page === "app") {
       const remaining = Math.max(total - used, 0);
 
       if (creditsTotalSpan) creditsTotalSpan.textContent = String(total);
-      if (creditsRemainingSpan)
-        creditsRemainingSpan.textContent = String(remaining);
+      if (creditsRemainingSpan) creditsRemainingSpan.textContent = String(remaining);
     }
 
     function renderHistory() {
@@ -575,7 +575,7 @@ if (page === "app") {
             tdCredits.textContent = item.credits ? `${item.credits}` : "—";
 
             const tdStatus = document.createElement("td");
-            tdStatus.textContent = item.status || "Generado (simulado)";
+            tdStatus.textContent = item.status || "Generado";
 
             tr.appendChild(tdTitle);
             tr.appendChild(tdType);
@@ -605,7 +605,6 @@ if (page === "app") {
         }
 
         const data = await res.json().catch(() => []);
-        // asumimos formato { materials: [...] } o directamente [...]
         const remote = Array.isArray(data)
           ? data
           : Array.isArray(data.materials)
@@ -613,7 +612,6 @@ if (page === "app") {
           : [];
 
         if (remote.length) {
-          // opcional: podríamos mergear, por ahora sobreescribimos
           materials = remote.map((m) => ({
             id: m.id || m._id || Date.now(),
             title: m.title,
@@ -622,7 +620,8 @@ if (page === "app") {
             questions: m.questions || 0,
             createdAt: m.createdAt || new Date().toISOString(),
             credits: m.estimatedCredits || m.credits || 0,
-            status: m.status || "Generado"
+            status: m.status || "Generado",
+            outputText: m.outputText || ""
           }));
           saveMaterialsToStorage();
           renderHistory();
@@ -662,101 +661,176 @@ if (page === "app") {
       if (materialSuccess) materialSuccess.textContent = "";
     }
 
+    async function generateViaApi({ type, inputText, questions, difficulty }) {
+      const res = await fetch(`${API_BASE_URL}/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type,
+          inputText,
+          questions,
+          difficulty
+        })
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "No se pudo generar el material.");
+      }
+
+      return res.json();
+    }
+
+    // Copiar / Descargar
+    if (copyOutputBtn) {
+      copyOutputBtn.addEventListener("click", async () => {
+        const text = generatedOutputEl ? generatedOutputEl.textContent : "";
+        if (!text) return;
+        try {
+          await navigator.clipboard.writeText(text);
+          if (materialSuccess) materialSuccess.textContent = "Copiado al portapapeles.";
+        } catch (_) {
+          if (materialError) materialError.textContent = "No se pudo copiar (permiso del navegador).";
+        }
+      });
+    }
+
+    if (downloadOutputBtn) {
+      downloadOutputBtn.addEventListener("click", () => {
+        const text = generatedOutputEl ? generatedOutputEl.textContent : "";
+        if (!text) return;
+        const ts = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+        downloadTextFile(`formatexp-${ts}.txt`, text);
+      });
+    }
+
     if (materialForm) {
       materialForm.addEventListener("submit", async (event) => {
         event.preventDefault();
         clearMaterialMessages();
 
-        const title = materialTitleInput ? materialTitleInput.value.trim() : "";
-        const type = materialTypeSelect ? materialTypeSelect.value : "test";
-        const source = materialSourceTextarea
-          ? materialSourceTextarea.value.trim()
-          : "";
+        const title = safeText(materialTitleInput?.value);
+        const rawType = safeText(materialTypeSelect?.value) || "test";
+        const difficulty = safeText(materialDifficultySelect?.value) || "medio";
+        const source = safeText(materialSourceTextarea?.value);
         const questions = materialQuestionsInput
-          ? Number(materialQuestionsInput.value || "0")
-          : 0;
+          ? Number(materialQuestionsInput.value || "10")
+          : 10;
 
         if (!title) {
-          if (materialError)
-            materialError.textContent =
-              "Pon un título al material para poder guardarlo.";
-          if (materialTitleInput) materialTitleInput.focus();
+          if (materialError) materialError.textContent = "Pon un título al material para poder guardarlo.";
+          materialTitleInput?.focus();
           return;
         }
 
-        const estimate = estimateCredits(type);
+        // MVP: de momento solo generamos estos 3 en OpenAI (presentación luego)
+        const type = ["test", "resumen", "guia"].includes(rawType) ? rawType : "guia";
+
+        if (!source || source.length < 50) {
+          if (materialError) materialError.textContent = "Pega un texto un poco más largo (mínimo ~50 caracteres).";
+          materialSourceTextarea?.focus();
+          return;
+        }
+
+        const estimate = estimateCredits(rawType);
         const total = getTotalCreditsForPlan(currentUser.plan);
         const used = getUsedCredits();
         const remaining = Math.max(total - used, 0);
 
         if (estimate > remaining) {
-          if (materialError)
-            materialError.textContent =
-              "No tienes suficientes créditos estimados para esta generación. Imagina aquí un CTA a comprar más créditos.";
+          if (materialError) materialError.textContent =
+            "No tienes suficientes créditos para esta generación. (Luego añadiremos compra de créditos).";
           return;
         }
 
-        // Item local
-        const newItem = {
-          id: Date.now(),
-          title,
-          type,
-          sourceLength: source.length,
-          questions: isNaN(questions) ? 0 : questions,
-          createdAt: new Date().toISOString(),
-          credits: estimate,
-          status: "Generado (simulado)"
-        };
+        // UI loading
+        const submitBtn = materialForm.querySelector('button[type="submit"]');
+        const prevBtnText = submitBtn ? submitBtn.textContent : "Generar material";
+        if (submitBtn) submitBtn.disabled = true;
+        if (submitBtn) submitBtn.textContent = "Generando…";
+        if (generatedOutputEl) generatedOutputEl.textContent = "Generando contenido con IA…";
 
-        // Intentar guardar también en la API
         try {
-          if (API_BASE_URL && auth.token) {
-            const res = await fetch(`${API_BASE_URL}/materials`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${auth.token}`
-              },
-              body: JSON.stringify({
-                title,
-                type,
-                source,
-                questions: isNaN(questions) ? 0 : questions,
-                estimatedCredits: estimate
-              })
-            });
+          // 1) Generar con OpenAI vía API
+          const result = await generateViaApi({
+            type,
+            inputText: source,
+            questions: Number.isFinite(questions) ? questions : 10,
+            difficulty
+          });
 
-            if (res.ok) {
-              const data = await res.json().catch(() => ({}));
-              const m = data.material || data;
-              if (m) {
-                newItem.id = m.id || m._id || newItem.id;
-                newItem.status = m.status || "Generado";
+          const outputText = safeText(result.outputText);
+
+          // 2) Pintar output
+          if (generatedOutputEl) generatedOutputEl.textContent = outputText || "(Sin contenido devuelto)";
+
+          // 3) Guardar item local
+          const newItem = {
+            id: Date.now(),
+            title,
+            type: rawType, // guardamos lo que el user eligió
+            difficulty,
+            sourceLength: source.length,
+            questions: isNaN(questions) ? 0 : questions,
+            createdAt: new Date().toISOString(),
+            credits: estimate,
+            status: "Generado (IA)",
+            outputText
+          };
+
+          // 4) Intentar guardar también en API /materials (si tu backend lo soporta)
+          try {
+            if (API_BASE_URL && auth.token) {
+              const res = await fetch(`${API_BASE_URL}/materials`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${auth.token}`
+                },
+                body: JSON.stringify({
+                  title,
+                  type: rawType,
+                  difficulty,
+                  source,
+                  questions: isNaN(questions) ? 0 : questions,
+                  estimatedCredits: estimate,
+                  status: "Generado (IA)",
+                  outputText
+                })
+              });
+
+              if (res.ok) {
+                const data = await res.json().catch(() => ({}));
+                const m = data.material || data;
+                if (m) {
+                  newItem.id = m.id || m._id || newItem.id;
+                }
+              } else {
+                console.warn("No se pudo guardar el material en la API.");
               }
-            } else {
-              console.warn("No se pudo guardar el material en la API.");
             }
+          } catch (err) {
+            console.error("Error guardando material en API:", err);
           }
+
+          materials.push(newItem);
+          saveMaterialsToStorage();
+          renderHistory();
+          updateCreditsUI();
+
+          if (materialSuccess) materialSuccess.textContent =
+            "Listo: material generado con IA y guardado en tu historial.";
+
+          // Opcional: no reseteamos el texto pegado para que el profesor pueda retocar
+          // materialForm.reset();
+
         } catch (err) {
-          console.error("Error guardando material en API:", err);
-        }
-
-        materials.push(newItem);
-        saveMaterialsToStorage();
-        renderHistory();
-        updateCreditsUI();
-
-        if (materialSuccess) {
-          materialSuccess.textContent =
-            "Material generado (simulado) y añadido a tu historial.";
-        }
-        materialForm.reset();
-
-        if (materialTypeSelect && creditsEstimateSpan) {
-          const defaultEstimate = estimateCredits(
-            materialTypeSelect.value || "test"
-          );
-          creditsEstimateSpan.textContent = String(defaultEstimate);
+          console.error(err);
+          if (generatedOutputEl) generatedOutputEl.textContent = "";
+          if (materialError) materialError.textContent = err.message || "No se pudo generar el material.";
+        } finally {
+          if (submitBtn) submitBtn.disabled = false;
+          if (submitBtn) submitBtn.textContent = prevBtnText;
         }
       });
     }
@@ -776,7 +850,6 @@ if (page === "app") {
         else link.classList.remove("is-active");
       });
 
-      // Actualizar hash
       window.location.hash = `#/${key}`;
     }
 
@@ -825,14 +898,17 @@ if (page === "app") {
 
     // Inicializar panel
     function initPanel() {
-      // 1) Cargar lo que haya en localStorage para no mostrar vacío
       loadMaterialsFromStorage();
       renderHistory();
       updateCreditsUI();
       initSectionFromHash();
-
-      // 2) Intentar sincronizar con API (sobreescribe si hay datos)
       syncMaterialsFromApi();
+
+      // Estado inicial output
+      if (generatedOutputEl && !generatedOutputEl.textContent) {
+        generatedOutputEl.textContent =
+          "Genera un material para ver el resultado aquí.";
+      }
     }
 
     initPanel();
