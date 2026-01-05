@@ -19,7 +19,9 @@ const page = body ? body.getAttribute("data-page") : "";
 
 // Utilidades comunes
 const yearSpan = document.getElementById("year");
-if (yearSpan) yearSpan.textContent = new Date().getFullYear();
+if (yearSpan) {
+  yearSpan.textContent = new Date().getFullYear();
+}
 
 // Menú móvil
 const navToggle = document.querySelector(".nav-toggle");
@@ -33,7 +35,7 @@ if (navToggle && nav) {
 
   nav.addEventListener("click", (event) => {
     const target = event.target;
-    if (target && target.tagName === "A" && nav.classList.contains("open")) {
+    if (target.tagName === "A" && nav.classList.contains("open")) {
       nav.classList.remove("open");
       navToggle.setAttribute("aria-expanded", "false");
     }
@@ -60,6 +62,41 @@ function setStoredJson(key, value) {
   } catch (_) {}
 }
 
+// Fetch helper con timeout + parseo seguro
+async function fetchJson(url, options = {}, timeoutMs = 15000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const res = await fetch(url, { ...options, signal: controller.signal });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      const msg =
+        (data && (data.error || data.message)) || `Error HTTP ${res.status}`;
+      const err = new Error(msg);
+      err.status = res.status;
+      err.data = data;
+      throw err;
+    }
+
+    return data;
+  } catch (err) {
+    if (err?.name === "AbortError") {
+      throw new Error("La petición tardó demasiado. Inténtalo de nuevo.");
+    }
+    if (String(err?.message || "").includes("Failed to fetch")) {
+      throw new Error(
+        "No se pudo conectar con la API. Revisa tu conexión o vuelve a intentarlo en unos segundos."
+      );
+    }
+    throw err;
+  } finally {
+    clearTimeout(id);
+  }
+}
+
 // ===================
 // LANDING
 // ===================
@@ -74,7 +111,9 @@ if (page === "landing") {
   const formError = document.getElementById("form-error");
   const formSuccess = document.getElementById("form-success");
   const faqButtons = document.querySelectorAll(".faq-question");
-  const pricingButtons = document.querySelectorAll(".pricing-card button[data-plan]");
+  const pricingButtons = document.querySelectorAll(
+    ".pricing-card button[data-plan]"
+  );
 
   function clearMessages() {
     if (formError) formError.textContent = "";
@@ -86,6 +125,7 @@ if (page === "landing") {
     return checked ? checked.value : "personal";
   }
 
+  // Si ya está logueado, cambiar CTA "Entrar"
   const existingAuth = getStoredJson(STORAGE_AUTH_KEY);
   if (existingAuth && existingAuth.token && existingAuth.user?.email) {
     const loginLink = document.querySelector('a[href="./login.html"]');
@@ -151,21 +191,23 @@ if (page === "landing") {
         date: new Date().toISOString()
       };
 
-      // 1) local
+      // 1) Guardar en localStorage
       setStoredJson(STORAGE_WAITLIST_KEY, payload);
 
-      // 2) API (no rompe UX si falla)
+      // 2) Enviar a tu API real (no rompemos UX si falla)
       try {
-        await fetch(`${API_BASE_URL}/waitlist`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...payload, source: "landing" })
-        });
+        if (typeof API_BASE_URL === "string" && API_BASE_URL) {
+          await fetchJson(`${API_BASE_URL}/waitlist`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...payload, source: "landing" })
+          }).catch(() => {});
+        }
       } catch (err) {
         console.error("Error enviando a API /waitlist:", err);
       }
 
-      // 3) Formspree
+      // 3) Enviar a Formspree (copia/notificación)
       if (WAITLIST_ENDPOINT) {
         try {
           const response = await fetch(WAITLIST_ENDPOINT, {
@@ -185,20 +227,22 @@ if (page === "landing") {
             })
           });
 
-          if (!response.ok) throw new Error("Error al enviar el formulario (Formspree)");
+          if (!response.ok) throw new Error("Formspree error");
         } catch (error) {
           console.error(error);
-          if (!formError.textContent) {
+          if (formError.textContent === "") {
             formError.textContent =
-              "Hemos registrado tu interés, pero hubo un problema al notificar por correo. Revisaremos este error.";
+              "Te hemos registrado, pero hubo un problema al notificar por correo. Seguimos igualmente.";
           }
         }
       }
 
-      formSuccess.textContent = "¡Gracias! Te hemos añadido a la lista de espera de FormatExp.";
+      formSuccess.textContent =
+        "¡Gracias! Te hemos añadido a la lista de espera de FormatExp.";
       form.reset();
     });
 
+    // Autocompletar desde localStorage si ya se registró antes
     const stored = getStoredJson(STORAGE_WAITLIST_KEY);
     if (stored) {
       if (stored.name && nameInput) nameInput.value = stored.name;
@@ -206,12 +250,15 @@ if (page === "landing") {
       if (stored.role && roleSelect) roleSelect.value = stored.role;
       if (stored.center && centerInput) centerInput.value = stored.center;
       if (stored.plan) {
-        const radioToCheck = document.querySelector(`input[name="plan"][value="${stored.plan}"]`);
+        const radioToCheck = document.querySelector(
+          `input[name="plan"][value="${stored.plan}"]`
+        );
         if (radioToCheck) radioToCheck.checked = true;
       }
     }
   }
 
+  // FAQ acordeones
   faqButtons.forEach((button) => {
     button.addEventListener("click", () => {
       const expanded = button.getAttribute("aria-expanded") === "true";
@@ -221,6 +268,7 @@ if (page === "landing") {
     });
   });
 
+  // CTA desde pricing -> mensaje en el form
   pricingButtons.forEach((button) => {
     button.addEventListener("click", () => {
       const plan = button.getAttribute("data-plan");
@@ -228,30 +276,36 @@ if (page === "landing") {
 
       switch (plan) {
         case "personal":
-          message = "Has mostrado interés en el Plan Personal. Lo tendremos en cuenta al priorizar invitaciones.";
+          message =
+            "Has mostrado interés en el Plan Personal. Lo tendremos en cuenta al priorizar invitaciones.";
           break;
         case "pro":
-          message = "Has mostrado interés en el Plan Pro. Priorizaremos tu acceso cuando el generador de presentaciones esté listo.";
+          message =
+            "Has mostrado interés en el Plan Pro. Priorizaremos tu acceso cuando el generador de presentaciones esté listo.";
           break;
         case "academia":
-          message = "Has mostrado interés en el Plan Academia. Te contactaremos para coordinar una demo personalizada.";
+          message =
+            "Has mostrado interés en el Plan Academia. Te contactaremos para coordinar una demo personalizada.";
+          break;
+        default:
           break;
       }
 
-      if (document.getElementById("form-success")) {
-        const formSuccess = document.getElementById("form-success");
+      if (formSuccess) {
         formSuccess.textContent = message;
         formSuccess.scrollIntoView({ behavior: "smooth", block: "center" });
       }
 
-      const radioToCheck = document.querySelector(`input[name="plan"][value="${plan}"]`);
+      const radioToCheck = document.querySelector(
+        `input[name="plan"][value="${plan}"]`
+      );
       if (radioToCheck) radioToCheck.checked = true;
     });
   });
 }
 
 // ===================
-// LOGIN
+// LOGIN (real contra API)
 // ===================
 if (page === "login") {
   const loginForm = document.getElementById("login-form");
@@ -266,56 +320,42 @@ if (page === "login") {
   }
 
   const waitlistData = getStoredJson(STORAGE_WAITLIST_KEY);
-  if (waitlistData?.email && loginEmailInput) loginEmailInput.value = waitlistData.email;
-  if (waitlistData?.plan && loginPlanSelect) loginPlanSelect.value = waitlistData.plan;
+  if (waitlistData && waitlistData.email && loginEmailInput) {
+    loginEmailInput.value = waitlistData.email;
+  }
+  if (waitlistData && waitlistData.plan && loginPlanSelect) {
+    loginPlanSelect.value = waitlistData.plan;
+  }
 
   function showLoginError(message) {
     if (loginError) loginError.textContent = message;
   }
 
   async function loginViaApi(email, password) {
-    const res = await fetch(`${API_BASE_URL}/auth/login`, {
+    return fetchJson(`${API_BASE_URL}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password })
     });
-
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      const msg = data.error || "No se ha podido iniciar sesión.";
-      const err = new Error(msg);
-      err.status = res.status;
-      throw err;
-    }
-    return res.json();
   }
 
   async function registerViaApi(email, password, planSelected) {
-    const wait
-    = getStoredJson(STORAGE_WAITLIST_KEY) || {};
+    const waitlist = getStoredJson(STORAGE_WAITLIST_KEY) || {};
+
     const body = {
-      name: (R.name || email.split("@")[0] || "Profesor FormatExp"),
+      name: waitlist.name || email.split("@")[0] || "Profesor FormatExp",
       email,
       password,
-      role: R.role || "otros",
-      center: R.center || "",
-      plan: planSelected || R.plan || "personal"
+      role: waitlist.role || "otros",
+      center: waitlist.center || "",
+      plan: planSelected || waitlist.plan || "personal"
     };
 
-    const res = await fetch(`${API_BASE_URL}/auth/register`, {
+    return fetchJson(`${API_BASE_URL}/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
     });
-
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      const msg = data.error || "No se ha podido crear tu cuenta.";
-      const err = new Error(msg);
-      err.status = res.status;
-      throw err;
-    }
-    return res.json();
   }
 
   if (loginForm) {
@@ -351,6 +391,7 @@ if (page === "login") {
         try {
           data = await loginViaApi(emailValue, passwordValue);
         } catch (err) {
+          // Primer acceso: intentamos registro si es 401/404
           if (err.status === 401 || err.status === 404) {
             data = await registerViaApi(emailValue, passwordValue, planSelected);
           } else {
@@ -358,12 +399,13 @@ if (page === "login") {
           }
         }
 
-        setStoredJson(STORAGE_AUTH_KEY, { token: data.token, user: data.user });
+        const authData = { token: data.token, user: data.user };
+        setStoredJson(STORAGE_AUTH_KEY, authData);
 
-        const wl = getStoredJson(STORAGE_WAITLIST_KEY);
-        if (wl) {
-          wl.plan = planSelected || wl.plan || "personal";
-          setStoredJson(STORAGE_WAITLIST_KEY, wl);
+        // coherencia con waitlist local
+        if (waitlistData) {
+          waitlistData.plan = planSelected || waitlistData.plan || "personal";
+          setStoredJson(STORAGE_WAITLIST_KEY, waitlistData);
         }
 
         window.location.href = "./app.html";
@@ -376,28 +418,27 @@ if (page === "login") {
 }
 
 // ===================
-// APP / PANEL (IA REAL)
+// APP / PANEL
 // ===================
 if (page === "app") {
-  const auth = getStoredJson(STORAGE_AUTH_KEY);
+  let auth = getStoredJson(STORAGE_AUTH_KEY);
 
-  // Si no tienes auth real aún, puedes comentar esto temporalmente:
-  if (!auth || !auth.user || !auth.user.email) {
+  if (!auth || !auth.token || !auth.user || !auth.user.email) {
     window.location.href = "./login.html";
   } else {
     const currentUser = auth.user;
+    let materials = []; // cache local en memoria
 
     const logoutBtn = document.getElementById("logout-btn");
     const appUserEmail = document.getElementById("app-user-email");
     const appUserPlan = document.getElementById("app-user-plan");
-
     const accountName = document.getElementById("account-name");
     const accountEmail = document.getElementById("account-email");
     const accountRole = document.getElementById("account-role");
     const accountCenter = document.getElementById("account-center");
     const accountPlan = document.getElementById("account-plan");
-
     const navLinks = document.querySelectorAll(".app-nav-link");
+
     const sections = {
       create: document.getElementById("section-create"),
       history: document.getElementById("section-history"),
@@ -411,27 +452,31 @@ if (page === "app") {
     const materialForm = document.getElementById("material-form");
     const materialTitleInput = document.getElementById("material-title");
     const materialTypeSelect = document.getElementById("material-type");
-    const materialDifficultySelect = document.getElementById("material-difficulty");
+    const materialDifficultySelect = document.getElementById(
+      "material-difficulty"
+    );
     const materialSourceTextarea = document.getElementById("material-source");
     const materialQuestionsInput = document.getElementById("material-questions");
     const creditsEstimateSpan = document.getElementById("credits-estimate");
     const materialError = document.getElementById("material-error");
     const materialSuccess = document.getElementById("material-success");
 
-    const generateBtn = document.getElementById("generate-btn");
-    const generatedOutput = document.getElementById("generated-output");
-    const generatedMeta = document.getElementById("generated-meta");
-    const copyBtn = document.getElementById("copy-output-btn");
-    const clearBtn = document.getElementById("clear-output-btn");
-    const copySuccess = document.getElementById("copy-success");
-
     const historyEmpty = document.getElementById("history-empty");
     const historyList = document.getElementById("history-list");
     const historyBody = document.getElementById("history-body");
 
-    // UI user
+    // (Opcional) output del material si lo añades en app.html
+    const generatedOutput = document.getElementById("generated-output");
+    const generatedMeta = document.getElementById("generated-meta");
+    const generateBtn = document.getElementById("generate-btn");
+
     if (appUserEmail) appUserEmail.textContent = currentUser.email || "";
-    const planMap = { personal: "Plan Personal", pro: "Plan Pro", academia: "Plan Academia" };
+
+    const planMap = {
+      personal: "Plan Personal",
+      pro: "Plan Pro",
+      academia: "Plan Academia"
+    };
     const planLabel = planMap[currentUser.plan] || "Plan Personal";
     if (appUserPlan) appUserPlan.textContent = planLabel;
 
@@ -441,7 +486,6 @@ if (page === "app") {
     if (accountCenter) accountCenter.textContent = currentUser.center || "—";
     if (accountPlan) accountPlan.textContent = planLabel;
 
-    // Credits
     function getTotalCreditsForPlan(plan) {
       switch (plan) {
         case "pro":
@@ -453,8 +497,6 @@ if (page === "app") {
           return 100;
       }
     }
-
-    let materials = [];
 
     function loadMaterialsFromStorage() {
       const arr = getStoredJson(STORAGE_MATERIALS_KEY);
@@ -475,7 +517,8 @@ if (page === "app") {
       const remaining = Math.max(total - used, 0);
 
       if (creditsTotalSpan) creditsTotalSpan.textContent = String(total);
-      if (creditsRemainingSpan) creditsRemainingSpan.textContent = String(remaining);
+      if (creditsRemainingSpan)
+        creditsRemainingSpan.textContent = String(remaining);
     }
 
     function renderHistory() {
@@ -500,7 +543,12 @@ if (page === "app") {
             tdTitle.textContent = item.title || "—";
 
             const tdType = document.createElement("td");
-            const typeMap = { test: "Test", resumen: "Resumen", guia: "Guía", presentacion: "Presentación" };
+            const typeMap = {
+              test: "Test",
+              resumen: "Resumen",
+              guia: "Guía",
+              presentacion: "Presentación"
+            };
             tdType.textContent = typeMap[item.type] || item.type || "—";
 
             const tdDate = document.createElement("td");
@@ -524,6 +572,40 @@ if (page === "app") {
       }
     }
 
+    async function syncMaterialsFromApi() {
+      try {
+        const data = await fetchJson(`${API_BASE_URL}/materials`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${auth.token}` }
+        });
+
+        const remote = Array.isArray(data)
+          ? data
+          : Array.isArray(data.materials)
+          ? data.materials
+          : [];
+
+        if (remote.length) {
+          materials = remote.map((m) => ({
+            id: m.id || m._id || Date.now(),
+            title: m.title,
+            type: m.type,
+            sourceLength: m.sourceLength || 0,
+            questions: m.questions || 0,
+            createdAt: m.createdAt || new Date().toISOString(),
+            credits: m.estimatedCredits || m.credits || 0,
+            status: m.status || "Generado",
+            outputText: m.outputText || ""
+          }));
+          saveMaterialsToStorage();
+          renderHistory();
+          updateCreditsUI();
+        }
+      } catch (err) {
+        console.warn("No se pudieron cargar materiales desde API:", err?.message);
+      }
+    }
+
     function estimateCredits(type) {
       switch (type) {
         case "test":
@@ -539,6 +621,38 @@ if (page === "app") {
       }
     }
 
+    // Backend /generate acepta: test|resumen|guia (presentación la mapeamos a guía por ahora)
+    function mapTypeForGenerate(uiType) {
+      if (uiType === "presentacion") return "guia";
+      return uiType;
+    }
+
+    async function callGenerateApi({ type, inputText, questions }) {
+      return fetchJson(`${API_BASE_URL}/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type, inputText, questions })
+      }, 30000);
+    }
+
+    function setLoading(isLoading) {
+      if (generateBtn) {
+        generateBtn.disabled = isLoading;
+        generateBtn.textContent = isLoading
+          ? "Generando…"
+          : "Generar material";
+      }
+      if (materialForm) {
+        materialForm
+          .querySelectorAll("input,select,textarea,button")
+          .forEach((el) => {
+            if (el.id === "logout-btn") return;
+            if (el === generateBtn) return;
+            el.disabled = isLoading;
+          });
+      }
+    }
+
     if (materialTypeSelect && creditsEstimateSpan) {
       const updateEstimate = () => {
         const type = materialTypeSelect.value || "test";
@@ -551,59 +665,6 @@ if (page === "app") {
     function clearMaterialMessages() {
       if (materialError) materialError.textContent = "";
       if (materialSuccess) materialSuccess.textContent = "";
-      if (copySuccess) copySuccess.textContent = "";
-    }
-
-    function setLoading(isLoading) {
-      if (!generateBtn) return;
-      generateBtn.disabled = isLoading;
-      generateBtn.textContent = isLoading ? "Generando..." : "Generar con IA";
-    }
-
-    function mapTypeForGenerate(type) {
-      // Nuestro backend admite: test | resumen | guia
-      // Presentación en demo -> guía (estructura + guion)
-      if (type === "presentacion") return "guia";
-      return type;
-    }
-
-    async function callGenerateApi({ type, inputText, questions, difficulty }) {
-      const res = await fetch(`${API_BASE_URL}/generate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type, inputText, questions, difficulty })
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        const msg = data.error || "Error generando contenido.";
-        throw new Error(msg);
-      }
-
-      return res.json();
-    }
-
-    if (copyBtn && generatedOutput) {
-      copyBtn.addEventListener("click", async () => {
-        clearMaterialMessages();
-        const text = generatedOutput.value || "";
-        if (!text.trim()) return;
-
-        try {
-          await navigator.clipboard.writeText(text);
-          if (copySuccess) copySuccess.textContent = "Copiado al portapapeles ✅";
-        } catch {
-          if (copySuccess) copySuccess.textContent = "No se pudo copiar. Selecciona el texto y copia manualmente.";
-        }
-      });
-    }
-
-    if (clearBtn && generatedOutput) {
-      clearBtn.addEventListener("click", () => {
-        clearMaterialMessages();
-        generatedOutput.value = "";
-        if (generatedMeta) generatedMeta.textContent = "";
-      });
     }
 
     if (materialForm) {
@@ -614,9 +675,15 @@ if (page === "app") {
         const title = materialTitleInput ? materialTitleInput.value.trim() : "";
         const uiType = materialTypeSelect ? materialTypeSelect.value : "test";
         const type = mapTypeForGenerate(uiType);
-        const source = materialSourceTextarea ? materialSourceTextarea.value.trim() : "";
-        const difficulty = materialDifficultySelect ? materialDifficultySelect.value : "medio";
-        const questionsRaw = materialQuestionsInput ? Number(materialQuestionsInput.value || "0") : 0;
+        const source = materialSourceTextarea
+          ? materialSourceTextarea.value.trim()
+          : "";
+        const difficulty = materialDifficultySelect
+          ? materialDifficultySelect.value
+          : "medio";
+        const questionsRaw = materialQuestionsInput
+          ? Number(materialQuestionsInput.value || "0")
+          : 0;
         const questions = Number.isFinite(questionsRaw) ? questionsRaw : 0;
 
         if (!title) {
@@ -626,7 +693,9 @@ if (page === "app") {
         }
 
         if (!source || source.length < 50) {
-          if (materialError) materialError.textContent = "Pega un texto un poco más largo (mínimo ~50 caracteres).";
+          if (materialError)
+            materialError.textContent =
+              "Pega un texto un poco más largo (mínimo ~50 caracteres).";
           materialSourceTextarea?.focus();
           return;
         }
@@ -637,7 +706,9 @@ if (page === "app") {
         const remaining = Math.max(total - used, 0);
 
         if (estimate > remaining) {
-          if (materialError) materialError.textContent = "No tienes suficientes créditos para esta generación.";
+          if (materialError)
+            materialError.textContent =
+              "No tienes suficientes créditos para esta generación.";
           return;
         }
 
@@ -648,14 +719,14 @@ if (page === "app") {
           const data = await callGenerateApi({
             type,
             inputText: source,
-            questions: uiType === "test" ? Math.max(3, Math.min(25, questions || 10)) : undefined,
-            difficulty
+            questions: uiType === "test" ? (questions || 10) : undefined
           });
 
-          const outputText = data.outputText || "";
+          const outputText = data?.outputText || "(sin salida)";
 
-          // Mostrar resultado
+          // Mostrar resultado (si existe textarea #generated-output)
           if (generatedOutput) generatedOutput.value = outputText;
+
           if (generatedMeta) {
             const now = new Date();
             generatedMeta.textContent = `Generado: ${now.toLocaleString()} · Tipo: ${uiType} · Dificultad: ${difficulty}`;
@@ -679,20 +750,45 @@ if (page === "app") {
           renderHistory();
           updateCreditsUI();
 
-          if (materialSuccess) materialSuccess.textContent = "¡Listo! Material generado y guardado en el historial ✅";
+          // Guardar también en API (si quieres persistencia real)
+          try {
+            await fetchJson(`${API_BASE_URL}/materials`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${auth.token}`
+              },
+              body: JSON.stringify({
+                title,
+                type: uiType,
+                source,
+                difficulty,
+                questions: uiType === "test" ? (questions || 10) : undefined,
+                estimatedCredits: estimate,
+                outputText
+              })
+            }).catch(() => {});
+          } catch (_) {}
 
-          // No reseteamos todo: suele ser útil mantener el texto pegado.
-          // Si prefieres reset total, dímelo.
+          if (materialSuccess) {
+            materialSuccess.textContent =
+              uiType === "presentacion"
+                ? "Generado (usando guía como base). En el siguiente paso añadimos ‘presentación’ real."
+                : "Generado correctamente. Revisa el resultado y tu historial.";
+          }
+
+          // no reseteamos si quieres copiar el output; si prefieres reset:
+          // materialForm.reset();
         } catch (err) {
           console.error(err);
-          if (materialError) materialError.textContent = err.message || "Error generando contenido.";
+          if (materialError) materialError.textContent = err.message || "No se pudo generar.";
         } finally {
           setLoading(false);
         }
       });
     }
 
-    // Navegación hash
+    // Navegación con hash
     function showSection(key) {
       Object.keys(sections).forEach((k) => {
         const section = sections[k];
@@ -720,7 +816,8 @@ if (page === "app") {
     }
 
     function initSectionFromHash() {
-      showSection(getKeyFromHash());
+      const key = getKeyFromHash();
+      showSection(key);
     }
 
     navLinks.forEach((link) => {
@@ -733,14 +830,14 @@ if (page === "app") {
 
     window.addEventListener("hashchange", initSectionFromHash);
 
-    document.querySelectorAll('[data-go="create"]').forEach((link) => {
+    const goCreateLinks = document.querySelectorAll('[data-go="create"]');
+    goCreateLinks.forEach((link) => {
       link.addEventListener("click", (event) => {
         event.preventDefault();
         showSection("create");
       });
     });
 
-    // Logout
     if (logoutBtn) {
       logoutBtn.addEventListener("click", () => {
         try {
@@ -750,10 +847,14 @@ if (page === "app") {
       });
     }
 
-    // Init
-    loadMaterialsFromStorage();
-    renderHistory();
-    updateCreditsUI();
-    initSectionFromHash();
+    function initPanel() {
+      loadMaterialsFromStorage();
+      renderHistory();
+      updateCreditsUI();
+      initSectionFromHash();
+      syncMaterialsFromApi();
+    }
+
+    initPanel();
   }
 }
