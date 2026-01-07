@@ -1,114 +1,116 @@
+// src/routes/auth.routes.js
 import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { User } from "../models/User.js";
-import { config } from "../config.js";
-import { authRequired } from "../middleware/auth.js";
+import User from "../models/User.js";
 
-export const authRouter = express.Router();
+const router = express.Router();
 
-// Helper para crear token
-function createToken(user) {
+function signToken(userId) {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) throw new Error("JWT_SECRET no configurada");
+
   return jwt.sign(
-    {
-      sub: user._id.toString(),
-      email: user.email,
-      plan: user.plan
-    },
-    config.jwtSecret,
-    { expiresIn: config.jwtExpiresIn }
+    { sub: userId },
+    secret,
+    { expiresIn: process.env.JWT_EXPIRES_IN || "7d" }
   );
 }
 
-// Registro
-authRouter.post("/register", async (req, res, next) => {
+// REGISTER
+router.post("/register", async (req, res) => {
   try {
-    const { name, email, password, role, center, plan } = req.body;
+    const { name, email, password, plan } = req.body || {};
 
-    if (!name || !email || !password) {
-      return res.status(400).json({ error: "Nombre, email y contraseña son obligatorios" });
+    if (!email || !password) {
+      return res.status(400).json({
+        error: "Email y contraseña obligatorios."
+      });
     }
 
-    const existing = await User.findOne({ email: email.toLowerCase() });
+    if (password.length < 6) {
+      return res.status(400).json({
+        error: "La contraseña debe tener al menos 6 caracteres."
+      });
+    }
+
+    const existing = await User.findOne({
+      email: email.toLowerCase().trim()
+    });
+
     if (existing) {
-      return res.status(409).json({ error: "Ya existe un usuario con ese email" });
+      return res.status(409).json({
+        error: "Este email ya está registrado."
+      });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(password, salt);
-
-    // créditos iniciales según plan
-    let credits = 100;
-    if (plan === "pro") credits = 500;
-    if (plan === "academia") credits = 1000;
+    const passwordHash = await bcrypt.hash(password, 10);
 
     const user = await User.create({
-      name,
-      email: email.toLowerCase(),
+      name: name || "",
+      email: email.toLowerCase().trim(),
       passwordHash,
-      role: role || "otros",
-      center: center || "",
-      plan: plan || "personal",
-      credits
+      plan: plan || "personal"
     });
 
-    const token = createToken(user);
+    const token = signToken(user._id.toString());
 
-    res.status(201).json({
+    return res.json({
       token,
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role,
-        center: user.center,
         plan: user.plan,
-        credits: user.credits
+        role: user.role
       }
     });
   } catch (err) {
-    next(err);
+    console.error("REGISTER ERROR:", err);
+    return res.status(500).json({ error: "Error registrando usuario." });
   }
 });
 
-// Login
-authRouter.post("/login", async (req, res, next) => {
+// LOGIN
+router.post("/login", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password } = req.body || {};
+
     if (!email || !password) {
-      return res.status(400).json({ error: "Email y contraseña son obligatorios" });
+      return res.status(400).json({
+        error: "Email y contraseña obligatorios."
+      });
     }
 
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const user = await User.findOne({
+      email: email.toLowerCase().trim()
+    });
+
     if (!user) {
-      return res.status(401).json({ error: "Credenciales incorrectas" });
+      return res.status(401).json({ error: "Credenciales inválidas." });
     }
 
-    const isValid = await bcrypt.compare(password, user.passwordHash);
-    if (!isValid) {
-      return res.status(401).json({ error: "Credenciales incorrectas" });
+    const valid = await bcrypt.compare(password, user.passwordHash);
+    if (!valid) {
+      return res.status(401).json({ error: "Credenciales inválidas." });
     }
 
-    const token = createToken(user);
+    const token = signToken(user._id.toString());
 
-    res.json({
+    return res.json({
       token,
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role,
-        center: user.center,
         plan: user.plan,
-        credits: user.credits
+        role: user.role
       }
     });
   } catch (err) {
-    next(err);
+    console.error("LOGIN ERROR:", err);
+    return res.status(500).json({ error: "Error en login." });
   }
 });
 
-// Perfil actual
-authRouter.get("/me", authRequired, async (req, res) => {
-  res.json({ user: req.user });
-});
+export default router;

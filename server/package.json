@@ -17,6 +17,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.4.0",
     "morgan": "^1.10.0",
+    "node-cron": "^4.2.1",
     "openai": "^6.15.0"
   },
   "devDependencies": {

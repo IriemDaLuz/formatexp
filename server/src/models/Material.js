@@ -1,29 +1,49 @@
+// server/src/models/Material.js
 import mongoose from "mongoose";
 
 const materialSchema = new mongoose.Schema(
   {
-    owner: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    title: { type: String, required: true, trim: true },
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true
+    },
+    title: {
+      type: String,
+      required: true,
+      trim: true
+    },
     type: {
       type: String,
       enum: ["test", "resumen", "guia", "presentacion"],
       required: true
+    },
+    sourceLength: {
+      type: Number,
+      default: 0
     },
     difficulty: {
       type: String,
       enum: ["facil", "medio", "dificil"],
       default: "medio"
     },
-    questions: { type: Number, default: 0 },
-    sourceLength: { type: Number, default: 0 },
-    creditsUsed: { type: Number, default: 0 },
-    status: {
+    questions: {
+      type: Number,
+      default: 0
+    },
+    credits: {
+      type: Number,
+      default: 0
+    },
+    outputText: {
       type: String,
-      enum: ["simulado", "generado", "error"],
-      default: "simulado"
+      default: ""
     }
   },
-  { timestamps: true }
+  {
+    timestamps: true
+  }
 );
 
-export const Material = mongoose.model("Material", materialSchema);
+const Material = mongoose.model("Material", materialSchema);
+export default Material;

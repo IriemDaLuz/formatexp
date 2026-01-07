@@ -627,12 +627,17 @@ if (page === "app") {
       return uiType;
     }
 
-    async function callGenerateApi({ type, inputText, questions }) {
-      return fetchJson(`${API_BASE_URL}/generate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type, inputText, questions })
-      }, 30000);
+    // ✅ MODIFICADO: añadimos difficulty al body
+    async function callGenerateApi({ type, inputText, questions, difficulty }) {
+      return fetchJson(
+        `${API_BASE_URL}/generate`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type, inputText, questions, difficulty })
+        },
+        30000
+      );
     }
 
     function setLoading(isLoading) {
@@ -719,7 +724,8 @@ if (page === "app") {
           const data = await callGenerateApi({
             type,
             inputText: source,
-            questions: uiType === "test" ? (questions || 10) : undefined
+            questions: uiType === "test" ? (questions || 10) : undefined,
+            difficulty // ✅ MODIFICADO: enviamos difficulty
           });
 
           const outputText = data?.outputText || "(sin salida)";

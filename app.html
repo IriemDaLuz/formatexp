@@ -5,9 +5,13 @@
   <meta charset="utf-8" />
   <title>Panel del profesor — FormatExp</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Panel del profesor de FormatExp. Crea y organiza tus materiales generados con IA." />
+  <meta
+    name="description"
+    content="Panel del profesor de FormatExp. Crea y organiza tus materiales generados con IA."
+  />
   <link rel="stylesheet" href="./styles.css" />
 </head>
+
 <body data-page="app">
   <a class="skip-link" href="#main">Saltar al contenido principal</a>
 
@@ -22,10 +26,11 @@
       </a>
 
       <div class="app-header-right">
-        <div class="app-user">
+        <div class="app-user" aria-label="Usuario actual">
           <span class="app-user-email" id="app-user-email">profesor@ejemplo.com</span>
           <span class="app-user-plan" id="app-user-plan">Plan Personal</span>
         </div>
+
         <button type="button" class="btn btn-outline btn-sm" id="logout-btn">
           Cerrar sesión
         </button>
@@ -37,23 +42,22 @@
     <div class="container app-layout">
       <aside class="app-sidebar" aria-label="Navegación del panel">
         <nav>
-          <ul class="app-nav">
-            <li><button class="app-nav-link is-active" data-section="create">Nuevo material</button></li>
-            <li><button class="app-nav-link" data-section="history">Historial</button></li>
-            <li><button class="app-nav-link" data-section="credits">Créditos IA</button></li>
-            <li><button class="app-nav-link" data-section="account">Cuenta</button></li>
+          <ul class="app-nav" role="list">
+            <li><button class="app-nav-link is-active" data-section="create" type="button">Nuevo material</button></li>
+            <li><button class="app-nav-link" data-section="history" type="button">Historial</button></li>
+            <li><button class="app-nav-link" data-section="credits" type="button">Créditos IA</button></li>
+            <li><button class="app-nav-link" data-section="account" type="button">Cuenta</button></li>
           </ul>
         </nav>
 
         <section class="app-credits-summary" aria-label="Resumen de créditos">
           <h2>Créditos IA</h2>
-          <p class="credits-main">
+          <p class="credits-main" aria-label="Créditos restantes y totales">
             <span id="credits-remaining">100</span> / <span id="credits-total">100</span>
           </p>
           <p class="credits-label">Créditos disponibles este mes</p>
           <p class="credits-help">
-            Los tests, resúmenes, guías y presentaciones consumen créditos
-            según su complejidad.
+            Los tests, resúmenes, guías y presentaciones consumen créditos según su complejidad.
           </p>
         </section>
       </aside>
@@ -69,114 +73,147 @@
 
         <!-- SECCIÓN NUEVO MATERIAL -->
         <section id="section-create" class="app-section is-visible" aria-label="Crear nuevo material">
-          <h1>Crear nuevo material</h1>
-          <p class="section-intro">
-            Pega tu contenido, elige el tipo de material y genera una primera versión lista para clase.
-          </p>
-
-          <form id="material-form" class="material-form" novalidate>
-            <div class="field-group">
-              <label for="material-title">Título del material</label>
-              <input
-                id="material-title"
-                name="material-title"
-                type="text"
-                required
-                placeholder="Examen unidad 3 — Revolución Industrial"
-              />
-            </div>
-
-            <div class="field-group">
-              <label for="material-type">Qué quieres generar</label>
-              <select id="material-type" name="material-type" required>
-                <option value="test">Test / Examen tipo test</option>
-                <option value="resumen">Resumen</option>
-                <option value="guia">Guía de estudio</option>
-                <option value="presentacion">Presentación para clase</option>
-              </select>
-              <p class="field-help">
-                Presentación: en esta demo generamos un guion + estructura (fase 2 será PPT real).
-              </p>
-            </div>
-
-            <div class="field-group">
-              <label for="material-source">Contenido (texto o resumen del documento)</label>
-              <textarea
-                id="material-source"
-                name="material-source"
-                rows="7"
-                placeholder="Pega aquí el texto principal, temario o resumen del documento..."
-              ></textarea>
-              <p class="field-help">
-                Consejo: pega mínimo 6-10 líneas para mejores resultados.
-              </p>
-            </div>
-
-            <div class="field-group">
-              <label for="material-difficulty">Nivel de dificultad</label>
-              <select id="material-difficulty" name="material-difficulty">
-                <option value="facil">Fácil</option>
-                <option value="medio" selected>Medio</option>
-                <option value="dificil">Difícil</option>
-              </select>
-            </div>
-
-            <div class="field-group">
-              <label for="material-questions">Número de preguntas (solo tests)</label>
-              <input
-                id="material-questions"
-                name="material-questions"
-                type="number"
-                min="3"
-                max="25"
-                placeholder="Ej. 10"
-              />
-            </div>
-
-            <div class="field-group">
-              <p class="field-help">
-                Estimación de créditos para esta generación:
-                <strong><span id="credits-estimate">5</span> créditos</strong>.
-              </p>
-            </div>
-
-            <div class="field-group">
-              <button type="submit" class="btn btn-primary btn-lg" id="generate-btn">
-                Generar con IA
-              </button>
-              <p class="field-error" id="material-error" aria-live="polite"></p>
-              <p class="field-success" id="material-success" aria-live="polite"></p>
-            </div>
-          </form>
-
-          <!-- RESULTADO -->
-          <section class="card" style="margin-top: 1.25rem;" aria-label="Resultado generado">
-            <h2 style="margin-top:0;">Resultado</h2>
-            <p class="field-help" style="margin-top:-0.25rem;">
-              Copia, edita o úsalo como base. Próximo paso: exportación a PDF/Word.
+          <header class="app-section-head">
+            <h1>Crear nuevo material</h1>
+            <p class="section-intro">
+              Pega tu contenido, elige el tipo de material y genera una primera versión lista para clase.
             </p>
+          </header>
 
-            <div class="field-group">
-              <label for="generated-output">Texto generado</label>
-              <textarea id="generated-output" rows="14" placeholder="Aquí aparecerá la generación..." readonly></textarea>
-              <p class="field-help" id="generated-meta" aria-live="polite"></p>
-            </div>
+          <div class="app-create-grid">
+            <!-- FORM -->
+            <form id="material-form" class="material-form" novalidate aria-describedby="material-form-help">
+              <p class="sr-only" id="material-form-help">
+                Completa los campos y pulsa “Generar con IA”. El resultado aparecerá en el panel de la derecha.
+              </p>
 
-            <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
-              <button type="button" class="btn btn-outline" id="copy-output-btn">Copiar</button>
-              <button type="button" class="btn btn-ghost" id="clear-output-btn">Limpiar</button>
-            </div>
+              <div class="field-group">
+                <label for="material-title">Título del material</label>
+                <input
+                  id="material-title"
+                  name="material-title"
+                  type="text"
+                  required
+                  autocomplete="off"
+                  placeholder="Examen unidad 3 — Revolución Industrial"
+                />
+              </div>
 
-            <p class="field-success" id="copy-success" aria-live="polite"></p>
-          </section>
+              <div class="field-group">
+                <label for="material-type">Qué quieres generar</label>
+                <select id="material-type" name="material-type" required>
+                  <option value="test">Test / Examen tipo test</option>
+                  <option value="resumen">Resumen</option>
+                  <option value="guia">Guía de estudio</option>
+                  <option value="presentacion">Presentación para clase</option>
+                </select>
+                <p class="field-help">
+                  Presentación: en esta demo generamos un guion + estructura (fase 2 será PPT real).
+                </p>
+              </div>
+
+              <div class="field-group">
+                <label for="material-source">Contenido (texto o resumen del documento)</label>
+                <textarea
+                  id="material-source"
+                  name="material-source"
+                  rows="8"
+                  placeholder="Pega aquí el texto principal, temario o resumen del documento..."
+                ></textarea>
+                <p class="field-help">
+                  Consejo: pega mínimo 6–10 líneas para mejores resultados.
+                </p>
+              </div>
+
+              <div class="field-row">
+                <div class="field-group">
+                  <label for="material-difficulty">Dificultad</label>
+                  <select id="material-difficulty" name="material-difficulty">
+                    <option value="facil">Fácil</option>
+                    <option value="medio" selected>Medio</option>
+                    <option value="dificil">Difícil</option>
+                  </select>
+                </div>
+
+                <div class="field-group">
+                  <label for="material-questions">Preguntas (solo tests)</label>
+                  <input
+                    id="material-questions"
+                    name="material-questions"
+                    type="number"
+                    min="3"
+                    max="25"
+                    placeholder="Ej. 10"
+                    inputmode="numeric"
+                  />
+                </div>
+              </div>
+
+              <div class="field-group">
+                <p class="field-help">
+                  Estimación de créditos:
+                  <strong><span id="credits-estimate">5</span> créditos</strong>.
+                </p>
+              </div>
+
+              <div class="field-group">
+                <button type="submit" class="btn btn-primary btn-lg" id="generate-btn">
+                  Generar con IA
+                </button>
+
+                <p class="field-error" id="material-error" aria-live="polite"></p>
+                <p class="field-success" id="material-success" aria-live="polite"></p>
+              </div>
+            </form>
+
+            <!-- RESULTADO -->
+            <section class="card result-card" aria-label="Resultado generado">
+              <header class="result-head">
+                <h2 class="result-title">Resultado</h2>
+                <p class="result-subtitle">
+                  Copia, edita o úsalo como base. Próximo paso: exportación a PDF/Word.
+                </p>
+              </header>
+
+              <div class="field-group">
+                <label for="generated-output">Texto generado</label>
+                <textarea
+                  id="generated-output"
+                  rows="16"
+                  placeholder="Aquí aparecerá la generación..."
+                  readonly
+                ></textarea>
+
+                <p class="field-help" id="generated-meta" aria-live="polite"></p>
+              </div>
+
+              <div class="result-actions" role="group" aria-label="Acciones del resultado">
+                <button type="button" class="btn btn-outline" id="copy-output-btn">
+                  Copiar
+                </button>
+                <button type="button" class="btn btn-ghost" id="clear-output-btn">
+                  Limpiar
+                </button>
+              </div>
+
+              <p class="field-success" id="copy-success" aria-live="polite"></p>
+
+              <details class="result-tips">
+                <summary class="result-tips-summary">Consejos para mejorar el resultado</summary>
+                <ul class="result-tips-list">
+                  <li>Incluye nivel, curso y tema en el contenido para más precisión.</li>
+                  <li>Para tests: pega definiciones + ejemplos + un mini-resumen al final.</li>
+                  <li>Para guías: añade objetivos o criterios de evaluación.</li>
+                </ul>
+              </details>
+            </section>
+          </div>
         </section>
 
         <!-- SECCIÓN HISTORIAL -->
         <section id="section-history" class="app-section" aria-label="Historial de materiales generados">
           <h1>Historial de materiales</h1>
-          <p class="section-intro">
-            Aquí verás los materiales generados en este navegador.
-          </p>
+          <p class="section-intro">Aquí verás los materiales generados en este navegador.</p>
 
           <div id="history-empty" class="history-empty">
             <p>Aún no has generado ningún material.</p>
@@ -197,7 +234,7 @@
               <tbody id="history-body"></tbody>
             </table>
 
-            <p class="field-help" style="margin-top:0.9rem;">
+            <p class="field-help history-footnote">
               Sugerencia: en el siguiente paso añadimos “Abrir” para ver/editar/exportar cada material.
             </p>
           </div>

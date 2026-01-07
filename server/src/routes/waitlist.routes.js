@@ -1,28 +1,44 @@
 import express from "express";
-import { WaitlistEntry } from "../models/WaitlistEntry.js";
+import WaitlistEntry from "../models/WaitlistEntry.js";
 
-export const waitlistRouter = express.Router();
+const router = express.Router();
 
-waitlistRouter.post("/", async (req, res, next) => {
+/**
+ * POST /api/waitlist
+ * Guarda usuarios interesados (landing)
+ */
+router.post("/", async (req, res) => {
   try {
     const { name, email, role, center, plan, consent, source } = req.body;
 
-    if (!name || !email) {
-      return res.status(400).json({ error: "Nombre y email son obligatorios" });
+    if (!email) {
+      return res.status(400).json({
+        error: "Email requerido"
+      });
     }
 
-    const entry = await WaitlistEntry.create({
+    const entry = new WaitlistEntry({
       name,
-      email: email.toLowerCase(),
-      role: role || "",
-      center: center || "",
-      plan: plan || "",
+      email,
+      role,
+      center,
+      plan,
       consent: Boolean(consent),
-      source: source || "landing"
+      source: source || "landing",
+      createdAt: new Date()
     });
 
-    res.status(201).json({ id: entry._id });
+    await entry.save();
+
+    res.status(201).json({
+      message: "Usuario añadido a la waitlist"
+    });
   } catch (err) {
-    next(err);
+    console.error("Error en waitlist:", err);
+    res.status(500).json({
+      error: "Error guardando en la waitlist"
+    });
   }
 });
+
+export default router;

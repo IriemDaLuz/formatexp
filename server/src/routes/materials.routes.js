@@ -1,50 +1,60 @@
+// server/src/routes/materials.routes.js
 import express from "express";
-import { Material } from "../models/Material.js";
 import { authRequired } from "../middleware/auth.js";
+import Material from "../models/Material.js";
 
-export const materialsRouter = express.Router();
+const router = express.Router();
 
-// Todas las rutas requieren auth
-materialsRouter.use(authRequired);
-
-// Listar materiales del usuario
-materialsRouter.get("/", async (req, res, next) => {
+// =====================
+// GET /api/materials
+// =====================
+router.get("/", authRequired, async (req, res) => {
   try {
-    const items = await Material.find({ owner: req.user._id }).sort({
-      createdAt: -1
-    });
-    res.json(items);
+    const materials = await Material.find({ user: req.user._id })
+      .sort({ createdAt: -1 })
+      .limit(100);
+
+    res.json(materials);
   } catch (err) {
-    next(err);
+    console.error("Error obteniendo materiales:", err);
+    res.status(500).json({ error: "Error obteniendo materiales." });
   }
 });
 
-// Crear material (generación simulada, pero guardado real)
-materialsRouter.post("/", async (req, res, next) => {
+// =====================
+// POST /api/materials
+// =====================
+router.post("/", authRequired, async (req, res) => {
   try {
-    const { title, type, difficulty, questions, sourceLength, creditsUsed } =
-      req.body;
-
-    if (!title || !type) {
-      return res.status(400).json({ error: "Título y tipo son obligatorios" });
-    }
-
-    const credits = Number(creditsUsed) || 0;
-
-    // En un futuro: comprobar saldo de créditos del usuario antes de permitirlo
-    const item = await Material.create({
-      owner: req.user._id,
+    const {
       title,
       type,
-      difficulty: difficulty || "medio",
-      questions: Number(questions) || 0,
-      sourceLength: Number(sourceLength) || 0,
-      creditsUsed: credits,
-      status: "simulado"
+      source,
+      difficulty,
+      questions,
+      estimatedCredits,
+      outputText
+    } = req.body;
+
+    const material = new Material({
+      user: req.user._id,
+      title,
+      type,
+      sourceLength: source?.length || 0,
+      difficulty,
+      questions,
+      credits: estimatedCredits,
+      outputText,
+      createdAt: new Date()
     });
 
-    res.status(201).json(item);
+    await material.save();
+
+    res.status(201).json(material);
   } catch (err) {
-    next(err);
+    console.error("Error guardando material:", err);
+    res.status(500).json({ error: "Error guardando material." });
   }
 });
+
+export default router;
