@@ -1,4 +1,5 @@
 // /script.js
+const STRIPE_PUBLIC_KEY="pk_test_51SmlqMRtkKDqpD3locAMqmhPeKODKTC8gUuwbRNGlmj1AayF2ieRCNs9xCCofYQ4XKd97PrJLCmAXrgSK3ioLHMl00QoW02k4k";
 
 // Claves de almacenamiento
 const STORAGE_WAITLIST_KEY = "formatexp_waitlist";
