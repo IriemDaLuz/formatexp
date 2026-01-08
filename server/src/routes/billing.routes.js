@@ -1,5 +1,6 @@
+// server/src/routes/billing.routes.js
 import express from "express";
-import stripe from "../services/stripe.js";
+import getStripe from "../services/stripe.js";
 import { authRequired } from "../middleware/auth.js";
 
 const router = express.Router();
@@ -22,14 +23,19 @@ function getAppBaseUrl(req) {
 router.post("/checkout", authRequired, async (req, res) => {
   try {
     const { plan } = req.body || {};
-    if (!plan || !PRICE_MAP[plan]) {
-      return res.status(400).json({ error: "Plan inválido. Usa: personal | pro | academia" });
+    const priceId = PRICE_MAP[plan];
+
+    if (!plan || !priceId) {
+      return res
+        .status(400)
+        .json({ error: "Plan inválido. Usa: personal | pro | academia" });
     }
 
-    const priceId = PRICE_MAP[plan];
+    // Importante: inicializamos Stripe aquí (no en el import del módulo)
+    const stripe = getStripe();
+
     const baseUrl = getAppBaseUrl(req);
 
-    // Creamos checkout para suscripción
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       payment_method_types: ["card"],
@@ -38,20 +44,22 @@ router.post("/checkout", authRequired, async (req, res) => {
       // Asociamos por email (simple para MVP)
       customer_email: req.user.email,
 
-      // IMPORTANTE: metadata para saber el plan en el webhook
+      // Metadata para el webhook
       metadata: {
         plan,
         userId: String(req.user._id)
       },
 
-      success_url: `${baseUrl}/app.html?payment=success&plan=${encodeURIComponent(plan)}`,
+      success_url: `${baseUrl}/app.html?payment=success&plan=${encodeURIComponent(
+        plan
+      )}`,
       cancel_url: `${baseUrl}/app.html?payment=cancel`
     });
 
     return res.json({ url: session.url });
   } catch (err) {
     console.error("Stripe checkout error:", err);
-    return res.status(500).json({ error: "Error iniciando pago" });
+    return res.status(500).json({ error: err?.message || "Error iniciando pago" });
   }
 });
 

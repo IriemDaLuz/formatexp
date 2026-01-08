@@ -1,7 +1,18 @@
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2025-12-15.clover"
-});
+let stripeClient = null;
 
-export default stripe;
+export default function getStripe() {
+  if (stripeClient) return stripeClient;
+
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) {
+    throw new Error("STRIPE_SECRET_KEY no está definida en el entorno (.env).");
+  }
+
+  stripeClient = new Stripe(key, {
+    apiVersion: "2025-12-15.clover"
+  });
+
+  return stripeClient;
+}
