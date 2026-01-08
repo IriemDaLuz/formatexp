@@ -1,7 +1,6 @@
-// src/models/User.js
 import mongoose from "mongoose";
 
-const UserSchema = new mongoose.Schema(
+const userSchema = new mongoose.Schema(
   {
     name: {
       type: String,
@@ -24,8 +23,12 @@ const UserSchema = new mongoose.Schema(
 
     role: {
       type: String,
-      enum: ["user", "admin"],
-      default: "user"
+      default: "otros"
+    },
+
+    center: {
+      type: String,
+      default: ""
     },
 
     plan: {
@@ -37,6 +40,22 @@ const UserSchema = new mongoose.Schema(
     creditsUsed: {
       type: Number,
       default: 0
+    },
+
+    // Stripe
+    stripeCustomerId: {
+      type: String,
+      default: ""
+    },
+
+    stripeSubscriptionId: {
+      type: String,
+      default: ""
+    },
+
+    subscriptionStatus: {
+      type: String,
+      default: "none"
     }
   },
   {
@@ -44,4 +63,6 @@ const UserSchema = new mongoose.Schema(
   }
 );
 
-export default mongoose.model("User", UserSchema);
+const User = mongoose.model("User", userSchema);
+
+export default User;

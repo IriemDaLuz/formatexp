@@ -9,6 +9,9 @@ import generateRoutes from "./routes/generate.routes.js";
 import materialsRoutes from "./routes/materials.routes.js";
 import waitlistRoutes from "./routes/waitlist.routes.js";
 
+import billingRoutes from "./routes/billing.routes.js";
+import stripeWebhookRoutes from "./routes/stripe.webhook.routes.js";
+
 import { startCreditsResetJob } from "./jobs/resetCredits.js";
 
 dotenv.config();
@@ -16,33 +19,31 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-// ==================
-// MIDDLEWARES
-// ==================
 app.use(cors());
+
+//  1) Stripe webhook ANTES de express.json()
+app.use("/api/stripe", stripeWebhookRoutes);
+
+//  2) JSON para el resto
 app.use(express.json({ limit: "1mb" }));
 
-// ==================
-// ROUTES
-// ==================
 app.get("/", (_req, res) => {
   res.json({ status: "FormatExp API OK" });
 });
 
+// Rutas
 app.use("/api/auth", authRoutes);
 app.use("/api/generate", generateRoutes);
 app.use("/api/materials", materialsRoutes);
 app.use("/api/waitlist", waitlistRoutes);
+app.use("/api/billing", billingRoutes);
 
-// ==================
-// DB + SERVER START
-// ==================
+// DB + start
 mongoose
   .connect(process.env.MONGODB_URI)
   .then(() => {
     console.log("✓ Conectado a MongoDB");
 
-    // 🔄 Job mensual de créditos
     startCreditsResetJob();
 
     app.listen(PORT, () => {
