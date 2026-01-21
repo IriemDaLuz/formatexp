@@ -78,6 +78,16 @@ app.get("/", (_req, res) => {
   res.json({ status: "FormatExp API OK" });
 });
 
+app.get("/api/health", (_req, res) => {
+  res.json({
+    ok: true,
+    service: "FormatExp API",
+    env: process.env.NODE_ENV || "unknown",
+    time: new Date().toISOString()
+  });
+});
+
+
 // Rutas
 app.use("/api/auth", authRoutes);
 app.use("/api/generate", generateRoutes);
@@ -116,3 +126,6 @@ mongoose
   .catch((err) => {
     console.error("Error conectando a MongoDB:", err.message);
   });
+app.use((req, res) => {
+  res.status(404).json({ error: "Ruta no encontrada" });
+});

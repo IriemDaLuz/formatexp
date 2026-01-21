@@ -6,10 +6,15 @@ const STORAGE_AUTH_KEY = "formatexp_auth";
 const STORAGE_MATERIALS_KEY = "formatexp_materials";
 
 // URL base de la API (local vs producción)
-const API_BASE_URL =
-  window.location.hostname === "localhost"
-    ? "http://localhost:4000/api"
-    : "https://formatexp.onrender.com/api";
+const isLocal =
+  window.location.hostname === "localhost" ||
+  window.location.hostname === "127.0.0.1" ||
+  window.location.hostname === "0.0.0.0";
+
+const API_BASE_URL = isLocal
+  ? "http://localhost:4000/api"
+  : "https://formatexp.onrender.com/api";
+
 
 // Endpoint opcional para lista de espera (Formspree)
 const WAITLIST_ENDPOINT = "https://formspree.io/f/mnnwazvr";
