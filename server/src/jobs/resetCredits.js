@@ -4,7 +4,7 @@ import User from "../models/User.js";
 
 // Ejecutar el día 1 de cada mes a las 00:05
 export function startCreditsResetJob() {
-cron.schedule("* * * * *", async () => {
+cron.schedule("1 * * 00 05", async () => {
     try {
       console.log(" Reset mensual de créditos iniciado...");
 
