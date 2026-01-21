@@ -1,5 +1,4 @@
 // /script.js
-const STRIPE_PUBLIC_KEY="pk_test_51SmlqMRtkKDqpD3locAMqmhPeKODKTC8gUuwbRNGlmj1AayF2ieRCNs9xCCofYQ4XKd97PrJLCmAXrgSK3ioLHMl00QoW02k4k";
 
 // Claves de almacenamiento
 const STORAGE_WAITLIST_KEY = "formatexp_waitlist";
@@ -63,6 +62,39 @@ function setStoredJson(key, value) {
   } catch (_) {}
 }
 
+// ===================
+// AUTH HELPERS (NUEVO / REFORZADO)
+// ===================
+function getAuth() {
+  const auth = getStoredJson(STORAGE_AUTH_KEY);
+  if (!auth || !auth.token || !auth.user) return null;
+  return auth;
+}
+
+function setAuth(authData) {
+  if (!authData || !authData.token || !authData.user) return;
+  setStoredJson(STORAGE_AUTH_KEY, { token: authData.token, user: authData.user });
+}
+
+function clearAuth() {
+  try {
+    localStorage.removeItem(STORAGE_AUTH_KEY);
+  } catch (_) {}
+}
+
+function redirectToLogin() {
+  window.location.href = "./login.html";
+}
+
+function requireAuthOrRedirect() {
+  const auth = getAuth();
+  if (!auth) {
+    redirectToLogin();
+    return null;
+  }
+  return auth;
+}
+
 // Fetch helper con timeout + parseo seguro
 async function fetchJson(url, options = {}, timeoutMs = 15000) {
   const controller = new AbortController();
@@ -70,7 +102,6 @@ async function fetchJson(url, options = {}, timeoutMs = 15000) {
 
   try {
     const res = await fetch(url, { ...options, signal: controller.signal });
-
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
@@ -95,6 +126,38 @@ async function fetchJson(url, options = {}, timeoutMs = 15000) {
     throw err;
   } finally {
     clearTimeout(id);
+  }
+}
+
+// Helper para endpoints protegidos (NUEVO)
+async function authFetchJson(path, options = {}, timeoutMs = 15000) {
+  const auth = getAuth();
+  if (!auth || !auth.token) {
+    clearAuth();
+    redirectToLogin();
+    throw new Error("Sesión no válida. Inicia sesión de nuevo.");
+  }
+
+  try {
+    return await fetchJson(
+      `${API_BASE_URL}${path}`,
+      {
+        ...options,
+        headers: {
+          ...(options.headers || {}),
+          Authorization: `Bearer ${auth.token}`
+        }
+      },
+      timeoutMs
+    );
+  } catch (err) {
+    // Si es 401, sesión caducada/invalidada → logout forzado
+    if (err && (err.status === 401 || err.status === 403)) {
+      clearAuth();
+      redirectToLogin();
+      throw new Error("Tu sesión ha caducado. Inicia sesión de nuevo.");
+    }
+    throw err;
   }
 }
 
@@ -127,7 +190,7 @@ if (page === "landing") {
   }
 
   // Si ya está logueado, cambiar CTA "Entrar"
-  const existingAuth = getStoredJson(STORAGE_AUTH_KEY);
+  const existingAuth = getAuth();
   if (existingAuth && existingAuth.token && existingAuth.user?.email) {
     const loginLink = document.querySelector('a[href="./login.html"]');
     if (loginLink) {
@@ -142,7 +205,8 @@ if (page === "landing") {
       clearMessages();
 
       const nameValue = nameInput ? nameInput.value.trim() : "";
-      const emailValue = emailInput ? emailInput.value.trim() : "";
+      const emailValueRaw = emailInput ? emailInput.value.trim() : "";
+      const emailValue = emailValueRaw.toLowerCase();
       const roleValue = roleSelect ? roleSelect.value : "";
       const centerValue = centerInput ? centerInput.value.trim() : "";
       const planValue = getSelectedPlan();
@@ -315,7 +379,7 @@ if (page === "login") {
   const loginPlanSelect = document.getElementById("login-plan");
   const loginError = document.getElementById("login-error");
 
-  const existingAuth = getStoredJson(STORAGE_AUTH_KEY);
+  const existingAuth = getAuth();
   if (existingAuth && existingAuth.token && existingAuth.user?.email) {
     window.location.href = "./app.html";
   }
@@ -364,7 +428,8 @@ if (page === "login") {
       event.preventDefault();
       if (loginError) loginError.textContent = "";
 
-      const emailValue = loginEmailInput ? loginEmailInput.value.trim() : "";
+      const emailRaw = loginEmailInput ? loginEmailInput.value.trim() : "";
+      const emailValue = emailRaw.toLowerCase();
       const passwordValue = loginPasswordInput ? loginPasswordInput.value : "";
       const planSelected = loginPlanSelect ? loginPlanSelect.value : "";
 
@@ -392,7 +457,7 @@ if (page === "login") {
         try {
           data = await loginViaApi(emailValue, passwordValue);
         } catch (err) {
-          // Primer acceso: intentamos registro si es 401/404
+          // MVP: si no existe usuario o credenciales no válidas, intentamos registro
           if (err.status === 401 || err.status === 404) {
             data = await registerViaApi(emailValue, passwordValue, planSelected);
           } else {
@@ -400,10 +465,9 @@ if (page === "login") {
           }
         }
 
-        const authData = { token: data.token, user: data.user };
-        setStoredJson(STORAGE_AUTH_KEY, authData);
+        // Guardar sesión consistente: { token, user }
+        setAuth({ token: data.token, user: data.user });
 
-        // coherencia con waitlist local
         if (waitlistData) {
           waitlistData.plan = planSelected || waitlistData.plan || "personal";
           setStoredJson(STORAGE_WAITLIST_KEY, waitlistData);
@@ -422,10 +486,10 @@ if (page === "login") {
 // APP / PANEL
 // ===================
 if (page === "app") {
-  let auth = getStoredJson(STORAGE_AUTH_KEY);
-
-  if (!auth || !auth.token || !auth.user || !auth.user.email) {
-    window.location.href = "./login.html";
+  // Guard + sesión
+  let auth = requireAuthOrRedirect();
+  if (!auth) {
+    // requireAuthOrRedirect ya redirige
   } else {
     const currentUser = auth.user;
     let materials = []; // cache local en memoria
@@ -466,10 +530,12 @@ if (page === "app") {
     const historyList = document.getElementById("history-list");
     const historyBody = document.getElementById("history-body");
 
-    // (Opcional) output del material si lo añades en app.html
     const generatedOutput = document.getElementById("generated-output");
     const generatedMeta = document.getElementById("generated-meta");
     const generateBtn = document.getElementById("generate-btn");
+    const copyOutputBtn = document.getElementById("copy-output-btn");
+    const clearOutputBtn = document.getElementById("clear-output-btn");
+    const copySuccess = document.getElementById("copy-success");
 
     if (appUserEmail) appUserEmail.textContent = currentUser.email || "";
 
@@ -575,10 +641,11 @@ if (page === "app") {
 
     async function syncMaterialsFromApi() {
       try {
-        const data = await fetchJson(`${API_BASE_URL}/materials`, {
-          method: "GET",
-          headers: { Authorization: `Bearer ${auth.token}` }
-        });
+        const data = await authFetchJson(
+          "/materials",
+          { method: "GET" },
+          15000
+        );
 
         const remote = Array.isArray(data)
           ? data
@@ -622,16 +689,15 @@ if (page === "app") {
       }
     }
 
-    // Backend /generate acepta: test|resumen|guia (presentación la mapeamos a guía por ahora)
     function mapTypeForGenerate(uiType) {
       if (uiType === "presentacion") return "guia";
       return uiType;
     }
 
-    // ✅ MODIFICADO: añadimos difficulty al body
+    // IMPORTANTE: ahora /generate también va con Authorization (protegido opcionalmente)
     async function callGenerateApi({ type, inputText, questions, difficulty }) {
-      return fetchJson(
-        `${API_BASE_URL}/generate`,
+      return authFetchJson(
+        "/generate",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -644,9 +710,7 @@ if (page === "app") {
     function setLoading(isLoading) {
       if (generateBtn) {
         generateBtn.disabled = isLoading;
-        generateBtn.textContent = isLoading
-          ? "Generando…"
-          : "Generar material";
+        generateBtn.textContent = isLoading ? "Generando…" : "Generar con IA";
       }
       if (materialForm) {
         materialForm
@@ -657,6 +721,31 @@ if (page === "app") {
             el.disabled = isLoading;
           });
       }
+    }
+
+    // Acciones del resultado
+    if (copyOutputBtn) {
+      copyOutputBtn.addEventListener("click", async () => {
+        if (!generatedOutput) return;
+        const text = (generatedOutput.value || "").trim();
+        if (!text) return;
+        try {
+          await navigator.clipboard.writeText(text);
+          if (copySuccess) copySuccess.textContent = "Copiado al portapapeles.";
+        } catch (_) {
+          if (copySuccess)
+            copySuccess.textContent =
+              "No se pudo copiar. Copia manualmente el texto.";
+        }
+      });
+    }
+
+    if (clearOutputBtn) {
+      clearOutputBtn.addEventListener("click", () => {
+        if (generatedOutput) generatedOutput.value = "";
+        if (generatedMeta) generatedMeta.textContent = "";
+        if (copySuccess) copySuccess.textContent = "";
+      });
     }
 
     if (materialTypeSelect && creditsEstimateSpan) {
@@ -671,12 +760,17 @@ if (page === "app") {
     function clearMaterialMessages() {
       if (materialError) materialError.textContent = "";
       if (materialSuccess) materialSuccess.textContent = "";
+      if (copySuccess) copySuccess.textContent = "";
     }
 
     if (materialForm) {
       materialForm.addEventListener("submit", async (event) => {
         event.preventDefault();
         clearMaterialMessages();
+
+        // refrescar auth por si cambió (p.ej. expiración, etc.)
+        auth = requireAuthOrRedirect();
+        if (!auth) return;
 
         const title = materialTitleInput ? materialTitleInput.value.trim() : "";
         const uiType = materialTypeSelect ? materialTypeSelect.value : "test";
@@ -693,7 +787,8 @@ if (page === "app") {
         const questions = Number.isFinite(questionsRaw) ? questionsRaw : 0;
 
         if (!title) {
-          if (materialError) materialError.textContent = "Pon un título al material.";
+          if (materialError)
+            materialError.textContent = "Pon un título al material.";
           materialTitleInput?.focus();
           return;
         }
@@ -721,17 +816,15 @@ if (page === "app") {
         try {
           setLoading(true);
 
-          // Llamada REAL a IA
           const data = await callGenerateApi({
             type,
             inputText: source,
-            questions: uiType === "test" ? (questions || 10) : undefined,
-            difficulty // ✅ MODIFICADO: enviamos difficulty
+            questions: uiType === "test" ? questions || 10 : undefined,
+            difficulty
           });
 
-          const outputText = data?.outputText || "(sin salida)";
+          const outputText = data?.outputText || data?.result || "(sin salida)";
 
-          // Mostrar resultado (si existe textarea #generated-output)
           if (generatedOutput) generatedOutput.value = outputText;
 
           if (generatedMeta) {
@@ -739,13 +832,12 @@ if (page === "app") {
             generatedMeta.textContent = `Generado: ${now.toLocaleString()} · Tipo: ${uiType} · Dificultad: ${difficulty}`;
           }
 
-          // Guardar en historial local
           const newItem = {
             id: Date.now(),
             title,
             type: uiType,
             sourceLength: source.length,
-            questions: uiType === "test" ? (questions || 10) : 0,
+            questions: uiType === "test" ? questions || 10 : 0,
             createdAt: new Date().toISOString(),
             credits: estimate,
             status: "Generado",
@@ -757,20 +849,17 @@ if (page === "app") {
           renderHistory();
           updateCreditsUI();
 
-          // Guardar también en API (si quieres persistencia real)
+          // Guardado remoto protegido
           try {
-            await fetchJson(`${API_BASE_URL}/materials`, {
+            await authFetchJson("/materials", {
               method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${auth.token}`
-              },
+              headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 title,
                 type: uiType,
                 source,
                 difficulty,
-                questions: uiType === "test" ? (questions || 10) : undefined,
+                questions: uiType === "test" ? questions || 10 : undefined,
                 estimatedCredits: estimate,
                 outputText
               })
@@ -780,22 +869,19 @@ if (page === "app") {
           if (materialSuccess) {
             materialSuccess.textContent =
               uiType === "presentacion"
-                ? "Generado (usando guía como base). En el siguiente paso añadimos ‘presentación’ real."
-                : "Generado correctamente. Revisa el resultado y tu historial.";
+                ? "Generado (usando guía como base)."
+                : "Generado correctamente. Revisa el resultado.";
           }
-
-          // no reseteamos si quieres copiar el output; si prefieres reset:
-          // materialForm.reset();
         } catch (err) {
           console.error(err);
-          if (materialError) materialError.textContent = err.message || "No se pudo generar.";
+          if (materialError)
+            materialError.textContent = err.message || "No se pudo generar.";
         } finally {
           setLoading(false);
         }
       });
     }
 
-    // Navegación con hash
     function showSection(key) {
       Object.keys(sections).forEach((k) => {
         const section = sections[k];
@@ -847,9 +933,7 @@ if (page === "app") {
 
     if (logoutBtn) {
       logoutBtn.addEventListener("click", () => {
-        try {
-          localStorage.removeItem(STORAGE_AUTH_KEY);
-        } catch (_) {}
+        clearAuth();
         window.location.href = "./login.html";
       });
     }

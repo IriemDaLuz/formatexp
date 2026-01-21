@@ -78,14 +78,16 @@ router.post("/", authRequired, async (req, res) => {
       : 10;
 
     // -------- CRÉDITOS (BACKEND REAL) --------
-    const user = await User.findById(req.user._id);
+    // middleware adjunta req.user y req.userId
+    const userId = req.userId || req.user?._id;
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(401).json({ error: "Usuario no válido." });
     }
 
     const totalCredits = getPlanCredits(user.plan);
-    const usedCredits = user.creditsUsed || 0;
-    const cost = getCostByType(type);
+    const usedCredits = Number(user.creditsUsed || 0);
+    const cost = Number(getCostByType(type) || 0);
     const remaining = totalCredits - usedCredits;
 
     if (remaining < cost) {
@@ -174,10 +176,10 @@ ${instruction}
       max_output_tokens: MAX_OUTPUT_TOKENS
     });
 
-    const outputText = response.output_text || "";
+    const outputText = String(response.output_text || "").trim();
 
-    // -------- DESCONTAR CRÉDITOS --------
-    user.creditsUsed += cost;
+    // -------- DESCONTAR CRÉDITOS (ROBUSTO) --------
+    user.creditsUsed = Number(user.creditsUsed || 0) + cost;
     await user.save();
 
     // -------- RESPUESTA --------

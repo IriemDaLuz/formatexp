@@ -1,3 +1,4 @@
+// server/src/models/User.js
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
@@ -9,20 +10,22 @@ const userSchema = new mongoose.Schema(
     },
 
     email: {
-      type: String,
-      required: true,
-      unique: true,
-      lowercase: true,
-      trim: true
-    },
+  type: String,
+  required: true,
+  lowercase: true,
+  trim: true
+}
+,
 
     passwordHash: {
       type: String,
-      required: true
+      required: true,
+      select: false // nunca se devuelve por defecto
     },
 
     role: {
       type: String,
+      enum: ["otros", "primaria", "secundaria", "universidad"],
       default: "otros"
     },
 
@@ -39,22 +42,28 @@ const userSchema = new mongoose.Schema(
 
     creditsUsed: {
       type: Number,
-      default: 0
+      default: 0,
+      min: 0
     },
 
-    // Stripe
+    // =====================
+    // Stripe (privado)
+    // =====================
     stripeCustomerId: {
       type: String,
-      default: ""
+      default: "",
+      select: false
     },
 
     stripeSubscriptionId: {
       type: String,
-      default: ""
+      default: "",
+      select: false
     },
 
     subscriptionStatus: {
       type: String,
+      enum: ["none", "active", "past_due", "canceled"],
       default: "none"
     }
   },
@@ -62,6 +71,17 @@ const userSchema = new mongoose.Schema(
     timestamps: true
   }
 );
+
+// Índice explícito para garantizar unicidad real
+userSchema.index({ email: 1 }, { unique: true });
+
+// Seguridad extra: nunca devolver passwordHash aunque se haga .toJSON()
+userSchema.set("toJSON", {
+  transform(_doc, ret) {
+    delete ret.passwordHash;
+    return ret;
+  }
+});
 
 const User = mongoose.model("User", userSchema);
 
